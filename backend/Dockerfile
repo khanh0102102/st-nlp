@@ -38,4 +38,4 @@ COPY --chown=stnlp:stnlp backend/tests ./tests
 
 USER stnlp
 
-CMD ["pytest", "-q", "-p", "no:cacheprovider"]
+CMD ["python", "-m", "pytest", "-q", "-p", "no:cacheprovider"]
