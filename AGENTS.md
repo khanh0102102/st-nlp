@@ -28,7 +28,7 @@ Không chỉ dựa vào README hoặc một đoạn mô tả nhiệm vụ nếu 
 ## 4. Nguyên tắc nghiệp vụ không được tự ý thay đổi
 
 - ST-NLP tiếp nhận phản ánh giao thông và hạ tầng đô thị bằng văn bản, hình ảnh và vị trí.
-- Hệ thống phân loại văn bản vào 11 nhóm; tên và định nghĩa chính thức của 11 nhóm phải lấy từ Classification Specification/danh mục đã được chủ dự án duyệt, không tự đặt nhãn.
+- Hệ thống phân loại văn bản vào đúng 11 nhóm tại docs/01_REQUIREMENTS/CLASSIFICATION_SPECIFICATION.md; đây là nguồn chuẩn về tên/thứ tự/mã. Không tự đặt, thêm, bỏ hoặc đổi category.
 - AI đưa ra nhãn đề xuất và thông tin confidence. Cán bộ có thẩm quyền xác nhận hoặc điều chỉnh; không coi dự đoán AI là quyết định cuối cùng.
 - Cổng người dân và cổng quản trị phải được phân tách về URL/route và quyền truy cập.
 - Người dân xác thực bằng Google theo định hướng đã thống nhất. Người dân chỉ được truy cập dữ liệu thuộc quyền của mình.
@@ -95,7 +95,7 @@ Không nói test đã pass nếu chưa chạy hoặc không có output xác nh�
 ## 10. Những điểm chưa được tự quyết
 
 Các nội dung sau phải được xác nhận hoặc tìm trong quyết định đã duyệt trước khi triển khai phụ thuộc:
-- Tên, mô tả, mã và thứ tự chính thức của 11 danh mục.
+- Ranh giới nghiệp vụ chi tiết giữa các danh mục giao nhau, guideline gán nhãn và các thay đổi label schema trong tương lai.
 - Framework Frontend/Backend, hệ quản trị Database và phiên bản cụ thể.
 - Nhà cung cấp bản đồ/geocoding và quy tắc tọa độ.
 - Cách lưu ảnh, giới hạn file, thời hạn lưu trữ và chính sách xóa.
@@ -177,3 +177,14 @@ Một thay đổi chỉ đạt khi:
 - Đã thử quy trình trên môi trường sạch hoặc CI container.
 
 Khi báo cáo, phải ghi rõ lệnh Docker đã chạy và kết quả thực tế.
+
+
+## 13. Baseline danh mục và Database được cung cấp bởi chủ dự án
+
+- Danh mục chính thức gồm đúng 11 tên và thứ tự trong docs/01_REQUIREMENTS/CLASSIFICATION_SPECIFICATION.md. category_code trong tài liệu là mã kỹ thuật ổn định dùng thống nhất; không hard-code catalog khác ở module khác.
+- Database baseline có đúng 12 bảng: users, incident_categories, reports, report_attachments, preprocessing_runs, model_versions, predictions, prediction_reviews, datasets, dataset_samples, training_runs, training_metrics. Nguồn schema: docs/03_DATABASE/DATABASE_DESIGN.md, ERD.md và DATA_DICTIONARY.md.
+- users bao gồm CITIZEN, RECEIVER, ADMIN; permission kiểm tra server-side. Không tự tạo roles/permissions table trong baseline.
+- reports.raw_content bất biến; reports.final_category_id là nhãn cán bộ xác nhận; predictions giữ nhãn AI; prediction_reviews append-only.
+- Mỗi row datasets là một version bất biến khi FROZEN. Không tạo bảng dataset_versions riêng.
+- Không thêm audit_logs vào schema 12 bảng. Audit tổng quát phải đi qua audit sink append-only ngoài DB; provider/retention cần được chốt trước production.
+- Đây là thiết kế tài liệu; chỉ coi schema triển khai khi có SQLAlchemy models, migration, seed và test Docker thực tế.
