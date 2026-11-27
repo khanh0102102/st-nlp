@@ -30,8 +30,9 @@ API FastAPI phục vụ request, auth, report, review và registry. Training NLP
 
 ## Bằng chứng
 
-GitHub Actions run #14 (https://github.com/khanh0102102/st-nlp/actions/runs/46035149937) trên commit 4af33cedd814c69784a47fe37cc4b8924668a02f:
-- Backend suite: 33 passed, 1 skipped (Torch-only suite được tách khỏi API runtime).
+GitHub Actions run #17 (https://github.com/khanh0102102/st-nlp/actions/runs/46036493691) trên commit 58b6acf5890c416b9d55812afdacf6739d74c560:
+- Backend suite: 37 passed, 1 skipped (Torch-only suite được tách khỏi API runtime).
+- DB-backed NB/SVM training integration: frozen synthetic dataset; TrainingRun, 120 TrainingMetric rows, ModelVersion, artifact checksum và artifact reload passed.
 - Neural CPU suite: 8 passed.
 - ML trainer CLI --help: passed.
 - Docker Compose application startup và health checks: passed.

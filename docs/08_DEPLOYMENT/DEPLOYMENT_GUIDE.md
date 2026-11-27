@@ -8,17 +8,18 @@
 
 ## 1. Phạm vi và trạng thái đã xác minh
 
-Repository có Docker Compose stack gồm PostgreSQL 18.7, FastAPI, React/Vite build được phục vụ bởi Nginx. CI run #14 trên code commit 4af33cedd814c69784a47fe37cc4b8924668a02f đã xác minh:
+Repository có Docker Compose stack gồm PostgreSQL 18.7, FastAPI, React/Vite build được phục vụ bởi Nginx. CI run #17 trên code commit 58b6acf5890c416b9d55812afdacf6739d74c560 đã xác minh:
 
 - docker compose config --quiet và build các image app/test.
 - Alembic migration trên PostgreSQL mới.
 - Seed/verify chính xác 11 danh mục.
-- 33 backend tests passed, 1 test skip trong API runtime image.
+- 37 backend tests passed, 1 test skip trong API runtime image.
 - 8 CNN/LSTM neural component tests passed trong CPU ML test image.
+- DB-backed NB/SVM training integration trên dataset tổng hợp: TrainingRun SUCCEEDED, 120 TrainingMetric rows, ModelVersion, SHA-256 artifact và artifact reload đều được kiểm tra.
 - ML trainer CLI --help chạy thành công.
 - Khởi động stack và kiểm tra frontend/API liveness/readiness.
 
-CI không chứng minh Google OAuth với tài khoản thật, frontend portal đầy đủ, training run trên dataset thật hoặc production readiness.
+CI không chứng minh Google OAuth với tài khoản thật, frontend portal đầy đủ, model quality trên dataset thật hoặc production readiness. DB-backed training test chỉ xác minh mechanics bằng synthetic CI samples.
 
 ## 2. Branch hiện tại
 
@@ -98,7 +99,7 @@ Kiểm tra cấu hình:
 
     docker compose config --quiet
 
-Các lệnh trên không yêu cầu cài thư viện lên host. CI run #14 là bằng chứng được xác minh cho snapshot code nêu tại mục 1.
+Các lệnh trên không yêu cầu cài thư viện lên host. CI run #17 là bằng chứng được xác minh cho snapshot code nêu tại mục 1.
 
 ## 8. Huấn luyện mô hình trong Docker
 
@@ -106,7 +107,7 @@ Trainer là CLI one-shot, không phải inference service. Xem CLI:
 
     docker compose --profile training run --build --rm --no-deps ml-trainer --help
 
-Cú pháp đã được smoke-test qua CLI --help; các lệnh train bên dưới là entrypoint triển khai, chưa được xác minh end-to-end trên dataset thật:
+Cú pháp đã được smoke-test qua CLI --help và NB/SVM orchestration đã được tích hợp với PostgreSQL bằng synthetic CI data; các lệnh train bên dưới vẫn chưa được xác minh trên frozen dataset thật/được duyệt:
 
     docker compose --profile training run --rm --no-deps ml-trainer train --dataset-id <DATASET_UUID> --model-family NB --created-by <ADMIN_USER_UUID>
     docker compose --profile training run --rm --no-deps ml-trainer train --dataset-id <DATASET_UUID> --model-family SVM --created-by <ADMIN_USER_UUID>

@@ -7,13 +7,13 @@ Ngày cập nhật: 2026-11-27
 - Repository: https://github.com/khanh0102102/st-nlp
 - Base branch: main — chưa được thay đổi trong đợt triển khai này.
 - Working branch: feature/project-foundation.
-- Code snapshot đã được CI xác minh: 4af33cedd814c69784a47fe37cc4b8924668a02f.
-- Branch compare sau commit code: ahead 17, behind 0 so với main.
+- Code snapshot đã được CI xác minh: 58b6acf5890c416b9d55812afdacf6739d74c560.
+- Branch compare sau commit code: ahead 20, behind 0 so với main.
 - Không tự tạo/merge PR; việc đưa feature vào main cần được chủ dự án duyệt.
 
 ### CI evidence
 
-GitHub Actions run #14 (46035149937), conclusion success, trên commit 4af33cedd814c69784a47fe37cc4b8924668a02f.
+GitHub Actions run #17 (46036493691), conclusion success, trên commit 58b6acf5890c416b9d55812afdacf6739d74c560.
 
 | Hạng mục | Kết quả | Ghi chú |
 |---|---|---|
@@ -21,19 +21,20 @@ GitHub Actions run #14 (46035149937), conclusion success, trên commit 4af33cedd
 | Docker builds | PASS | app, backend test và CPU ML test/training stages |
 | Fresh PostgreSQL migration | PASS | Alembic initial schema |
 | Seed danh mục | PASS | Xác minh đúng 11 categories |
-| Backend pytest | PASS | 33 passed, 1 skipped trong API runtime image |
+| Backend pytest | PASS | 37 passed, 1 skipped trong API runtime image |
 | Neural component tests | PASS | 8 passed trong image có CPU PyTorch |
+| DB-backed NB/SVM training integration | PASS | Synthetic frozen dataset; TrainingRun, 120 metrics, ModelVersion, checksum và artifact reload verified |
 | ML trainer CLI smoke | PASS | python -m app.ml.cli --help qua Compose profile |
 | Application startup | PASS | API và web khởi động |
 | Health checks | PASS | frontend /health, API /health/live và /health/ready |
 
-Test bị skip trong backend image là module phụ thuộc PyTorch; phần neural tương ứng được chạy riêng trong CPU ML test image và có 8 test pass. CI là kiểm thử foundation trên GitHub runner, không chứng minh training run dùng dataset thật hoặc Google OAuth với credentials thật.
+Test bị skip trong backend image là module phụ thuộc PyTorch; phần neural tương ứng được chạy riêng trong CPU ML test image và có 8 test pass. CI là kiểm thử foundation trên GitHub runner. DB-backed training test xác minh mechanics bằng synthetic samples, không phải đánh giá chất lượng mô hình. Chưa chứng minh training trên dataset thật hoặc Google OAuth với credentials thật.
 
 ## Trạng thái theo subsystem
 
 | Subsystem | Trạng thái | Bằng chứng / giới hạn |
 |---|---|---|
-| Docker/local foundation | DONE cho local CI baseline | Compose validation/build/start và health checks pass trong run #14; production deployment chưa nghiệm thu |
+| Docker/local foundation | DONE cho local CI baseline | Compose validation/build/start và health checks pass trong run #17; production deployment chưa nghiệm thu |
 | Database | DONE cho schema foundation | 12 SQLAlchemy business models, initial migration, integrity constraints/triggers; CI migrate database mới |
 | Category catalog | DONE | Đúng 11 category code và order; seed verified trong CI |
 | Backend core/auth | PARTIAL | Session/CSRF/role checks, staff login và Google OIDC flow có code; Google OAuth thật chưa xác minh |
@@ -45,7 +46,7 @@ Test bị skip trong backend image là module phụ thuộc PyTorch; phần neur
 | Metrics | DONE ở mức module | Accuracy, macro/weighted precision-recall-F1, per-class support và confusion matrix; tests pass |
 | Classical NLP | DONE ở mức model component | TF-IDF word n-gram + MultinomialNB/LinearSVC, fit/predict parity và artifact save/load tests; chưa đánh giá chất lượng trên dataset thực |
 | CNN 1D / BiLSTM | PARTIAL | Model components, CPU artifact load/predict, short-sequence tests; 8 tests pass; training lifecycle trên dataset/database chưa E2E verified |
-| Training orchestration | PARTIAL | Frozen dataset guard, split checks, metrics/registry persistence và Docker CLI đã có; CLI --help smoke pass; train execution với real/approved dataset chưa xác minh |
+| Training orchestration | PARTIAL | NB/SVM end-to-end trên synthetic frozen DB dataset đã test, gồm run/metrics/model/artifact; CNN/LSTM và real/approved dataset training vẫn chưa E2E verified |
 | Inference integration | NOT_STARTED / BLOCKED | Chưa có authenticated inference service hoàn chỉnh và active model; không tạo prediction giả khi thiếu model |
 | Frontend | PARTIAL | React/Vite/Nginx status foundation; Citizen Portal, Admin Portal, interactive map và operational dashboards chưa hoàn thành |
 | Full integration / E2E | NOT_STARTED | Chưa chứng minh trọn luồng citizen report → review → frozen dataset → training → active inference |
@@ -88,13 +89,16 @@ Test bị skip trong backend image là module phụ thuộc PyTorch; phần neur
 | cbc903252d82dfa256f828d019119feadc1d204d | Điều chỉnh tách install commands; CI run trung gian bị cancel |
 | 5ead264e5411b6ec184e3ae3813f416ce235ba27 | Tách PyPI và PyTorch CPU index install đúng cách; CI #13 pass |
 | 4af33cedd814c69784a47fe37cc4b8924668a02f | Thêm trainer CLI smoke test; CI #14 pass |
+| 9042291a8309fc984c858309c791d3d80bca615f | Thêm ADR-0005 về ML training/runtime boundary |
+| b2fb080a9c32724ae83d048269995d5b52605420 | Đồng bộ README, deployment, implementation status và AI/ML docs |
+| 58b6acf5890c416b9d55812afdacf6739d74c560 | DB integration tests cho NB/SVM training lifecycle; CI #17 pass |
 
 Một số commit trung gian có CI fail do cấu hình dependency; lỗi đã được sửa ở các commit sau. Không dùng các commit trung gian đó làm release baseline.
 
 ## Next implementation work
 
-1. Viết DB integration tests cho frozen-dataset training orchestration: tạo sample đủ 11 classes/3 splits trong CI DB, chạy NB/SVM end-to-end, xác minh TrainingRun, TrainingMetric, ModelVersion, checksum và artifact.
-2. Bổ sung kiểm thử lỗi/rollback và ngăn rò rỉ fingerprint giữa data splits.
+1. Mở rộng DB integration tests cho CNN/LSTM training lifecycle và kiểm tra rollback/cleanup khi training thất bại; NB/SVM synthetic-data path đã có test end-to-end.
+2. Chuẩn hóa fingerprint giữa Dataset API và preprocessing, bổ sung kiểm thử duplicate gần giống và đảm bảo không rò rỉ giữa data splits.
 3. Hoàn thiện authenticated inference boundary: chỉ load model approved/active, verify checksum/schema/preprocessing, append prediction history; giữ no-active-model behavior rõ ràng.
 4. Mở rộng API authorization/integration tests cho report submission, attachment ownership, review, dataset freeze và model lifecycle.
 5. Xây dựng Citizen Portal và Admin Portal thật, kết nối API; thêm E2E workflow và map.

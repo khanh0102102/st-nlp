@@ -6,7 +6,7 @@ ST-NLP là hệ thống hỗ trợ tiếp nhận phản ánh giao thông và h�
 
 - Branch đang chứa implementation đã kiểm thử: feature/project-foundation.
 - main chưa được cập nhật các commit triển khai này; không dùng lệnh clone mặc định nếu cần lấy phiên bản đang phát triển.
-- CI run #14 đã xác minh Docker build, PostgreSQL migration/seed, backend tests, neural tests trong CPU image, trainer CLI smoke test và health checks.
+- CI run #17 đã xác minh Docker build, PostgreSQL migration/seed, 37 backend tests, 8 neural tests trong CPU image, DB-backed NB/SVM training integration, trainer CLI smoke test và health checks.
 - Đây là local development foundation, chưa phải release hoàn chỉnh hoặc production-ready.
 
 ## Local development (Docker-only)
@@ -38,7 +38,7 @@ Cảnh báo: docker compose down -v xóa named volumes, bao gồm PostgreSQL, up
 - Profile test: backend/API tests và CPU neural tests.
 - Profile training: image CLI huấn luyện riêng; không cài dependency ML nặng vào API runtime.
 
-Huấn luyện yêu cầu dataset đã đóng băng, đủ TRAIN/VALIDATION/TEST và TRAIN có đủ 11 danh mục. CI hiện smoke-test CLI và các thành phần mô hình; chưa chứng minh một training run hoàn chỉnh trên dataset thật. Xem Deployment Guide.
+Huấn luyện yêu cầu dataset đã đóng băng, đủ TRAIN/VALIDATION/TEST và TRAIN có đủ 11 danh mục. CI đã chạy NB/SVM training integration trên dataset tổng hợp trong PostgreSQL và xác minh TrainingRun, 120 TrainingMetric rows, ModelVersion, checksum và artifact reload; chưa chứng minh chất lượng mô hình trên dataset thật. Xem Deployment Guide.
 
 ## Phạm vi hiện tại và giới hạn
 

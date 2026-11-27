@@ -69,7 +69,7 @@ Training CLI: backend/app/ml/cli.py. Lệnh CLI --help được smoke-test trong
 - API runtime không cài PyTorch.
 - Artifacts lưu vào named volume model_artifacts_data; model registry lưu URI/checksum/metrics metadata.
 
-Training orchestration có kiểm tra dataset FROZEN, đủ ba split, đủ 11 classes trong TRAIN và không để fingerprint giống nhau rơi vào nhiều split. Tuy nhiên, một lần training với dataset thật/approved chưa được xác minh end-to-end.
+Training orchestration có kiểm tra dataset FROZEN, đủ ba split, đủ 11 classes trong TRAIN và không để fingerprint giống nhau rơi vào nhiều split. CI đã chạy NB/SVM end-to-end trên frozen synthetic dataset trong PostgreSQL và xác minh TrainingRun, metrics, ModelVersion, checksum và artifact reload. Đây chỉ là test mechanics; training/evaluation trên dataset thật/approved vẫn chưa được xác minh.
 
 ## 6. Inference flow mục tiêu và giới hạn hiện tại
 
@@ -107,7 +107,7 @@ Trước activation cần evaluation trên dataset version cố định, metrics
 
 ## 10. Work tiếp theo
 
-1. DB integration test full training orchestration trên synthetic CI data (chỉ xác minh mechanics, không dùng để báo cáo chất lượng mô hình).
+1. Mở rộng DB integration test cho CNN/LSTM training orchestration và failure rollback; NB/SVM synthetic CI mechanics đã được xác minh.
 2. Chạy train execution và artifact registration trên frozen approved dataset.
 3. Implement authenticated inference API/service.
 4. Thực hiện evaluation và calibration trên real/approved dataset.
