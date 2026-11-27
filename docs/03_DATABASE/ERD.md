@@ -12,7 +12,9 @@ Sơ đồ dưới đây mô tả các khái niệm và quan hệ nghiệp vụ �
 
 ## 2. ERD khái niệm
 
-    erDiagram
+```mermaid
+erDiagram
+```
       USER ||--o{ INCIDENT : submits
       USER }o--o{ ROLE : assigned
       INCIDENT ||--o{ ATTACHMENT : has
