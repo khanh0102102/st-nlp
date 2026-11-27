@@ -50,10 +50,10 @@ uploads/
 media/
 
 # User datasets, model artifacts and generated checkpoints
-datasets/
-artifacts/
-checkpoints/
-models/
+/datasets/
+/artifacts/
+/checkpoints/
+/model_artifacts/
 *.pt
 *.pth
 *.h5
