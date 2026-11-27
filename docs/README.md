@@ -78,3 +78,12 @@
 ## Quy tắc cập nhật
 
 Mỗi thay đổi ảnh hưởng đến nghiệp vụ, API, dữ liệu, bảo mật hoặc triển khai phải cập nhật tài liệu liên quan. Không coi tài liệu là đã được phê duyệt chỉ vì file đã tồn tại trong GitHub.
+
+
+## 10 — Quản trị dự án và theo dõi triển khai
+
+- [REPOSITORY_AUDIT](10_PROJECT_GOVERNANCE/REPOSITORY_AUDIT.md) — kết quả kiểm tra trạng thái repository, bằng chứng và blockers.
+- [REQUIREMENTS_TRACEABILITY_MATRIX](10_PROJECT_GOVERNANCE/REQUIREMENTS_TRACEABILITY_MATRIX.md) — ánh xạ SRS/BRD tới module, API, 12 bảng, test cases và trạng thái.
+- [IMPLEMENTATION_PLAN](10_PROJECT_GOVERNANCE/IMPLEMENTATION_PLAN.md) — các phase, dependencies, work packages và acceptance criteria.
+- [DECISION_LOG](10_PROJECT_GOVERNANCE/DECISION_LOG.md) — các quyết định đã xác lập và nội dung còn TBD.
+- [ADR-0001 Docker-only](10_PROJECT_GOVERNANCE/ADR/ADR-0001-DOCKER-ONLY.md) — quyết định Docker-only cho máy cá nhân.

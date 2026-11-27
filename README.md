@@ -67,3 +67,8 @@ ST-NLP sử dụng chính xác 11 danh mục theo thứ tự chủ dự án cung
 Thiết kế Database baseline gồm đúng 12 bảng: users, incident_categories, reports, report_attachments, preprocessing_runs, model_versions, predictions, prediction_reviews, datasets, dataset_samples, training_runs và training_metrics. Chi tiết nằm trong [Database Design](docs/03_DATABASE/DATABASE_DESIGN.md), [ERD](docs/03_DATABASE/ERD.md) và [Data Dictionary](docs/03_DATABASE/DATA_DICTIONARY.md).
 
 Các tài liệu này đang mô tả thiết kế đề xuất; chưa có SQLAlchemy models, migrations hay Database service được triển khai. DB engine và một số policy vận hành vẫn TBD.
+
+
+## Quản trị và theo dõi triển khai
+
+Xem [Repository Audit](docs/10_PROJECT_GOVERNANCE/REPOSITORY_AUDIT.md), [Requirements Traceability Matrix](docs/10_PROJECT_GOVERNANCE/REQUIREMENTS_TRACEABILITY_MATRIX.md), [Implementation Plan](docs/10_PROJECT_GOVERNANCE/IMPLEMENTATION_PLAN.md) và [Decision Log](docs/10_PROJECT_GOVERNANCE/DECISION_LOG.md) để theo dõi blockers, quyết định và tiến độ thực tế.

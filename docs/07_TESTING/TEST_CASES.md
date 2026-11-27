@@ -142,3 +142,21 @@ Khi thực thi, bổ sung: Actual Result, Pass/Fail/Blocked, Build/Commit, Teste
 | TC-DB-011 | Training metrics per-class | Có category_id, split, averaging và support đúng |
 | TC-DB-012 | Schema migration | Có đúng 12 bảng baseline; không tự thêm bảng thứ 13 |
 | TC-DB-013 | Review/audit sink tạm thời lỗi | Không làm mất dữ liệu review đã commit; audit event retry/được cảnh báo theo policy |
+
+
+## 11. Citizen Profile
+
+| ID | Kịch bản | Kết quả mong đợi |
+|---|---|---|
+| TC-CIT-001 | Citizen xem hồ sơ sau khi đăng nhập | Chỉ trả hồ sơ gắn với principal hiện tại; không nhận user_id tùy ý từ client |
+| TC-CIT-002 | Citizen cập nhật field hồ sơ được phép và thử field bị cấm | Field allow-list được chấp nhận; role/provider subject/account status bị từ chối sửa |
+
+## 12. Audit Event Coverage
+
+| ID | Kịch bản | Kết quả mong đợi |
+|---|---|---|
+| TC-AUD-001 | Đăng nhập quan trọng/thất bại xác thực | Audit event có actor/context, action, time và outcome; không chứa secret/token |
+| TC-AUD-002 | Review hoặc sửa nhãn phản ánh | Audit event liên kết report/prediction/review và ghi actor/time/outcome; không ghi toàn bộ raw_content |
+| TC-AUD-003 | Cán bộ thay đổi trạng thái report hoặc role | Event ghi before/after tối thiểu, actor và request ID |
+| TC-AUD-004 | Kích hoạt hoặc rollback model version | Event ghi model version cũ/mới, actor, timestamp và outcome |
+| TC-AUD-005 | Người không có quyền đọc audit | Backend từ chối; không lộ thông tin audit |
