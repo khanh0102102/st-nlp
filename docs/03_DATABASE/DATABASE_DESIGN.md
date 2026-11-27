@@ -130,7 +130,7 @@ Artifact không lưu trong Git hoặc BLOB Database; lưu ở private artifact s
 Mỗi lần inference:
 - id, report_id (FK reports).
 - preprocessing_run_id (FK preprocessing_runs).
-- model_version_id (FK model_versions).
+- model_version_id (nullable FK model_versions khi chưa có active model; nếu đã chọn model thì phải tham chiếu version đó).
 - predicted_category_id (nullable FK incident_categories khi inference thành công).
 - confidence_value (nullable numeric), confidence_type.
 - needs_review, inference_status, error_code.
@@ -223,7 +223,7 @@ Hỗ trợ Accuracy, Precision, Recall, Macro F1, Weighted F1 và F1/Precision/R
 - dataset_samples.category_id nullable chỉ khi labeling_status cho phép chưa gán nhãn.
 - dataset_samples.split chỉ nhận TRAIN/VALIDATION/TEST hoặc NULL trước khi chia.
 - training_metrics.metric_value phải hữu hạn, không NaN/Infinity; metric_name, split, averaging và category context phải rõ.
-- latitude thuộc [-90, 90], longitude thuộc [-180, 180]; CRS/precision phải được ghi rõ.
+- latitude thuộc [-90, 90], longitude thuộc [-180, 180]; CRS/precision phải được ghi rõ. Latitude và longitude phải cùng NULL hoặc cùng có giá trị.
 - Timestamp lưu UTC.
 - Trạng thái DB dùng code ổn định, có validation và transition ở Backend.
 
