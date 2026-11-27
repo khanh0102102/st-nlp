@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import os
+import httpx
 import re
 import uuid
 from pathlib import Path
@@ -253,12 +254,44 @@ def create_report(
     session.commit()
     session.refresh(report)
 
+    prediction_payload = {
+        "id": str(prediction.id),
+        "inference_status": prediction.inference_status,
+        "needs_review": True,
+        "predicted_category": None,
+        "confidence_value": None,
+        "confidence_type": None,
+    }
+    settings = get_settings()
+    try:
+        with httpx.Client(timeout=8.0) as client:
+            response = client.post(
+                settings.ml_service_url.rstrip("/") + "/internal/v1/predict",
+                headers={
+                    "Authorization": "Bearer "
+                    + settings.ml_internal_token.get_secret_value()
+                },
+                json={"report_id": str(report.id)},
+            )
+        if response.status_code == 200:
+            prediction_payload = response.json()["data"]
+        elif response.status_code != 409:
+            logging.getLogger(__name__).warning(
+                "ML service returned HTTP %s for report %s",
+                response.status_code,
+                report.id,
+            )
+    except httpx.HTTPError:
+        logging.getLogger(__name__).info(
+            "ML service is not reachable; report was saved with an explicit INFERENCE_FAILED record."
+        )
+
     recorded = _audit(
         request, actor_id=user.id, action="report.submitted",
         resource_type="report", resource_id=report.id,
         details={
             "status": report.status,
-            "inference_status": prediction.inference_status,
+            "inference_status": prediction_payload["inference_status"],
             "attachment_count": 0,
         },
     )
@@ -266,12 +299,7 @@ def create_report(
         "data": _report_payload(report),
         "meta": {
             "prediction": {
-                "id": str(prediction.id),
-                "inference_status": prediction.inference_status,
-                "needs_review": True,
-                "predicted_category": None,
-                "confidence_value": None,
-                "confidence_type": None,
+                **prediction_payload,
             },
             "audit_event_recorded": recorded,
         },

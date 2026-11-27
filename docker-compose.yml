@@ -33,6 +33,8 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:8080/api/v1/auth/google/callback}
+      ML_SERVICE_URL: ${ML_SERVICE_URL:-http://ml:8001}
+      ML_INTERNAL_TOKEN: ${ML_INTERNAL_TOKEN:-local-only-change-ml-internal-token-before-sharing}
     volumes:
       - uploads_data:/data/uploads
       - model_artifacts_data:/data/model-artifacts
@@ -50,6 +52,33 @@ services:
       timeout: 5s
       retries: 10
       start_period: 20s
+    restart: unless-stopped
+
+  ml:
+    build:
+      context: .
+      dockerfile: ml/Dockerfile
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      SECRET_KEY: ${SECRET_KEY:-local-only-change-before-any-shared-environment}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-stnlp}:${POSTGRES_PASSWORD:-stnlp_local_only_change_me}@db:5432/${POSTGRES_DB:-stnlp}
+      MODEL_ARTIFACTS_DIR: ${MODEL_ARTIFACTS_DIR:-/data/model-artifacts}
+      ML_INTERNAL_TOKEN: ${ML_INTERNAL_TOKEN:-local-only-change-ml-internal-token-before-sharing}
+    volumes:
+      - model_artifacts_data:/data/model-artifacts
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health/ready', timeout=4)"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 120s
     restart: unless-stopped
 
   api-test:

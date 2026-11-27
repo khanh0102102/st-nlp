@@ -12,6 +12,7 @@ from app.api.reports import (
     citizen_router,
 )
 from app.api.health import router as health_router
+from app.api.models import router as model_router
 from app.core.config import get_settings
 from app.core.sessions import (
     CSRF_COOKIE_NAME,
@@ -88,3 +89,4 @@ app.include_router(citizen_router)
 app.include_router(admin_reports_router)
 app.include_router(dashboard_router)
 app.include_router(attachments_router)
+app.include_router(model_router)

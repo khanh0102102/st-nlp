@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     google_client_id: str | None = None
     google_client_secret: SecretStr | None = None
     google_redirect_uri: str | None = None
+    ml_service_url: str = "http://ml:8001"
+    ml_internal_token: SecretStr = SecretStr(
+        "local-only-change-ml-internal-token-before-sharing"
+    )
 
     @property
     def cors_origins(self) -> list[str]:
@@ -50,13 +54,12 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def reject_local_secret_outside_development(self) -> "Settings":
         local_secret = "local-only-change-before-any-shared-environment"
-        if (
-            self.app_env.lower() not in {"development", "test"}
-            and self.secret_key.get_secret_value() == local_secret
-        ):
-            raise ValueError(
-                "SECRET_KEY must be changed outside development/test environments"
-            )
+        local_ml_token = "local-only-change-ml-internal-token-before-sharing"
+        if self.app_env.lower() not in {"development", "test"}:
+            if self.secret_key.get_secret_value() == local_secret:
+                raise ValueError("SECRET_KEY must be changed outside development/test environments")
+            if self.ml_internal_token.get_secret_value() == local_ml_token:
+                raise ValueError("ML_INTERNAL_TOKEN must be changed outside development/test environments")
         return self
 
 

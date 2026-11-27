@@ -10,3 +10,4 @@ Authlib==1.9.10
 pwdlib[argon2]==0.4.2
 itsdangerous==2.2.0
 python-multipart==0.0.27
+httpx==0.29.0
