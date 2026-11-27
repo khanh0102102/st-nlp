@@ -106,7 +106,7 @@ Giá trị mục tiêu số học: TBD; không đặt KPI giả định khi chư
 ## 10. Giả định và câu hỏi mở
 
 - Đơn vị nghiệp vụ chính thức và quy trình phê duyệt: TBD.
-- Từ điển 11 danh mục: cần cung cấp và duyệt.
+- Tên và thứ tự 11 danh mục đã được chủ dự án cung cấp và được mô tả tại CLASSIFICATION_SPECIFICATION.md; ranh giới giữa một số nhóm giao nhau cần tiếp tục được kiểm chứng bằng guideline nghiệp vụ.
 - Quy tắc SLA/trạng thái phản ánh: TBD.
 - Quy định lưu trữ, xử lý dữ liệu cá nhân và ảnh: cần xác minh.
 - Ngưỡng AI, KPI và mức độ tự động hóa: chưa chốt.
