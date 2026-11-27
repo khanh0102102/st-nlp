@@ -145,3 +145,39 @@ Backend/Frontend vẫn có thể có test gần source. Thư mục root dành ch
 - Không tạo nhiều bản sao schema/API.
 - Không lưu dataset lớn, image upload, model checkpoint hoặc DB dump trong Git; dùng storage/artifact repository.
 - Thư mục mới cần có README nếu mục đích không hiển nhiên.
+
+
+## 8. Docker files và nguyên tắc không cài dependency trên host
+
+Khi triển khai thật, cấu trúc cần bổ sung tối thiểu:
+
+    st-nlp/
+      docker-compose.yml
+      .dockerignore
+      .env.example
+      frontend/
+        Dockerfile
+        package.json
+        package-lock.json hoặc lockfile tương ứng
+      backend/
+        Dockerfile
+        pyproject.toml/requirements file và lockfile
+      docker/
+        nginx/                 # nếu dùng reverse proxy
+        scripts/               # entrypoint/healthcheck scripts
+      database/
+        migrations/
+        seeds/
+
+Các Dockerfile và manifest thực tế phụ thuộc stack được duyệt. Database/cache/queue/storage service dùng image trong Compose, không cài trực tiếp trên host.
+
+Không tạo hoặc yêu cầu host có `.venv/`, `node_modules/`, Python, Node.js hay package manager dự án. Nếu dùng bind mount cho hot reload, dependency phải nằm trong container hoặc named volume riêng, không lấy dependency từ host.
+
+Các lệnh dự kiến:
+- Build/start: `docker compose up --build -d`
+- Logs: `docker compose logs -f`
+- Run test: `docker compose run --rm <service> <test-command>`
+- Execute trong container: `docker compose exec <service> <command>`
+- Stop: `docker compose down`
+
+Tên service và câu lệnh cụ thể chỉ được ghi sau khi Compose thực tế được triển khai và kiểm thử.
