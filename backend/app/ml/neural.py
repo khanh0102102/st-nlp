@@ -88,6 +88,12 @@ class TextCNN(nn.Module):
 
     def forward(self, token_ids: torch.Tensor, lengths: torch.Tensor):
         embedded = self.embedding(token_ids).transpose(1, 2)
+        minimum_length = max(convolution.kernel_size[0] for convolution in self.convolutions)
+        if embedded.size(2) < minimum_length:
+            embedded = nn.functional.pad(
+                embedded,
+                (0, minimum_length - embedded.size(2)),
+            )
         pooled = []
         for kernel, convolution in zip((2, 3, 4), self.convolutions):
             activations = torch.relu(convolution(embedded))
@@ -220,23 +226,13 @@ def train_neural(
     vocabulary = build_vocabulary(train_texts)
     label_to_index = {label: index for index, label in enumerate(class_codes)}
     train_indices = [label_to_index[label] for label in train_labels]
-    validation_indices = [label_to_index[label] for label in validation_labels]
     train_dataset = EncodedTextDataset(
         _encode_many(train_texts, vocabulary), train_indices
-    )
-    validation_dataset = EncodedTextDataset(
-        _encode_many(validation_texts, vocabulary), validation_indices
     )
     train_loader = DataLoader(
         train_dataset,
         batch_size=BATCH_SIZE,
         shuffle=True,
-        collate_fn=collate_batch,
-    )
-    validation_loader = DataLoader(
-        validation_dataset,
-        batch_size=BATCH_SIZE,
-        shuffle=False,
         collate_fn=collate_batch,
     )
 

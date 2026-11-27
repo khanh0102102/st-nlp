@@ -54,3 +54,14 @@ USER stnlp
 
 ENTRYPOINT ["python", "-m", "app.ml.cli"]
 CMD ["--help"]
+
+FROM ml-training AS ml-test
+
+COPY backend/requirements-dev.txt ./requirements-dev.txt
+RUN python -m pip install --no-cache-dir -r requirements-dev.txt
+COPY --chown=stnlp:stnlp backend/tests ./tests
+
+USER stnlp
+
+ENTRYPOINT ["python"]
+CMD ["-m", "pytest", "-q", "-p", "no:cacheprovider", "tests/test_ml_neural.py"]

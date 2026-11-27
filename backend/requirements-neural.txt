@@ -1,2 +1,1 @@
-# Optional CPU neural-training dependency set; install only in the ML training image.
-torch==2.15.0
+# Optional CPU-only neural-training dependency set; install only in the ML training image.\n--index-url https://download.pytorch.org/whl/cpu\ntorch==2.15.0\n

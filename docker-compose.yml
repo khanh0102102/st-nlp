@@ -70,6 +70,15 @@ services:
       - -c
       - alembic -c /app/alembic.ini upgrade head && python -m app.db.seed && python -m pytest -q -p no:cacheprovider
 
+  ml-test:
+    profiles: ["test"]
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: ml-test
+    command: ["-m", "pytest", "-q", "-p", "no:cacheprovider", "tests/test_ml_neural.py"]
+    restart: "no"
+
   ml-trainer:
     profiles: ["training"]
     build:

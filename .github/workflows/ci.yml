@@ -35,6 +35,9 @@ jobs:
       - name: Run database migration, seed and backend tests
         run: docker compose --profile test run --rm api-test
 
+      - name: Run neural model tests in the CPU training image
+        run: docker compose --profile test run --rm --no-deps ml-test
+
       - name: Start application stack
         run: docker compose up -d
 
