@@ -1,25 +1,27 @@
 # ST-NLP — Smart Traffic & Urban Incident Classifier
 
-ST-NLP là hệ thống hỗ trợ tiếp nhận phản ánh giao thông và hạ tầng đô thị. NLP phân loại nội dung văn bản vào đúng 11 danh mục; kết quả AI là đề xuất để cán bộ có thẩm quyền xác nhận hoặc chỉnh sửa.
+ST-NLP là hệ thống hỗ trợ tiếp nhận phản ánh giao thông và hạ tầng đô thị. NLP được thiết kế để phân loại nội dung văn bản vào đúng 11 danh mục; kết quả AI chỉ là đề xuất, cán bộ có thẩm quyền mới xác nhận nhãn cuối cùng.
 
-## Repository baseline
+## Trạng thái repository
 
-- 11 danh mục theo docs/01_REQUIREMENTS/CLASSIFICATION_SPECIFICATION.md.
-- Database baseline chính xác 12 bảng theo docs/03_DATABASE/.
-- Kiến trúc triển khai: modular monolith, React/TypeScript, FastAPI/Python và PostgreSQL.
-- Phát triển/chạy local theo Docker-only; không yêu cầu runtime hoặc thư viện dự án trên host.
+- Branch đang chứa implementation đã kiểm thử: feature/project-foundation.
+- main chưa được cập nhật các commit triển khai này; không dùng lệnh clone mặc định nếu cần lấy phiên bản đang phát triển.
+- CI run #14 đã xác minh Docker build, PostgreSQL migration/seed, backend tests, neural tests trong CPU image, trainer CLI smoke test và health checks.
+- Đây là local development foundation, chưa phải release hoàn chỉnh hoặc production-ready.
 
-## Local development
+## Local development (Docker-only)
 
-Prerequisites: Git, Docker Desktop (Windows/macOS) hoặc Docker Engine + Compose plugin (Linux), và trình duyệt.
+Prerequisites trên máy host: Git, Docker Desktop (Windows/macOS) hoặc Docker Engine + Docker Compose plugin (Linux), và trình duyệt. Không cần cài Python, Node.js, npm, pip, PostgreSQL hoặc thư viện NLP/ML trên host.
 
-1. Clone repository.
-2. Sao chép .env.example thành .env nếu cần thay đổi port hoặc thông số local.
-3. Chạy:
+Lấy đúng branch đã triển khai:
 
+    git clone --branch feature/project-foundation --single-branch https://github.com/khanh0102102/st-nlp.git
+    cd st-nlp
     docker compose up --build -d
 
-4. Mở http://localhost:8080.
+Mở http://localhost:8080.
+
+Các cấu hình local mặc định đủ để chạy stack cơ bản. Sao chép .env.example thành .env khi muốn tùy chỉnh biến môi trường hoặc cấu hình Google OAuth. Đăng nhập Google thật cần OAuth client credentials và redirect URI hợp lệ; CI không kiểm thử tài khoản Google thật.
 
 Lệnh quản trị:
 
@@ -28,37 +30,45 @@ Lệnh quản trị:
     docker compose logs -f api
     docker compose down
 
-Cảnh báo: docker compose down -v xóa named volumes, bao gồm dữ liệu PostgreSQL, upload, model artifacts và audit local. Chỉ chạy khi chủ động muốn xóa dữ liệu local.
+Cảnh báo: docker compose down -v xóa named volumes, bao gồm PostgreSQL, uploads, model artifacts và audit local. Chỉ dùng khi chủ động muốn xóa dữ liệu.
 
-**Trạng thái:** Foundation hiện ở feature branch; Docker build/start chưa được xác minh. README mô tả cấu hình dự kiến, không phải bằng chứng các service đã chạy thành công.
+## Docker profiles
+
+- Mặc định: PostgreSQL, FastAPI và frontend/Nginx.
+- Profile test: backend/API tests và CPU neural tests.
+- Profile training: image CLI huấn luyện riêng; không cài dependency ML nặng vào API runtime.
+
+Huấn luyện yêu cầu dataset đã đóng băng, đủ TRAIN/VALIDATION/TEST và TRAIN có đủ 11 danh mục. CI hiện smoke-test CLI và các thành phần mô hình; chưa chứng minh một training run hoàn chỉnh trên dataset thật. Xem Deployment Guide.
+
+## Phạm vi hiện tại và giới hạn
+
+- Database implementation giữ đúng 12 bảng nghiệp vụ và seed đúng 11 danh mục.
+- Backend có nền tảng auth, reports, review, dashboard, dataset và model-registry APIs; các luồng nghiệp vụ vẫn đang được hoàn thiện.
+- NLP/ML core đã có Vietnamese preprocessing, metrics, TF-IDF + Naive Bayes/Linear SVM, CNN 1D và BiLSTM components.
+- Chưa có inference service được xác thực để nạp active model và xử lý prediction end-to-end. Khi chưa có model, hệ thống không tự tạo nhãn AI giả.
+- Frontend hiện là trang foundation/status; Citizen Portal, Admin Portal, bản đồ và dashboard vận hành hoàn chỉnh chưa được triển khai.
 
 ## Cấu trúc repository
 
 - docs/: yêu cầu, nghiệp vụ, kiến trúc, database, API, UI/UX, phát triển, kiểm thử, triển khai, AI/ML và governance.
-- frontend/: React SPA và giao diện hai cổng.
-- backend/: FastAPI, business modules, NLP/ML adapters.
-- database/: migration, seed và sơ đồ.
-- tests/: kiểm thử tích hợp/end-to-end ở cấp repository.
+- backend/: FastAPI, SQLAlchemy, Alembic, APIs và NLP/ML modules.
+- frontend/: React/Vite SPA được phục vụ qua Nginx.
+- docker-compose.yml: local application, test và training profiles.
 
 ## Tài liệu bắt đầu
 
 - AGENTS.md — quy tắc coding agent.
 - docs/README.md — mục lục.
-- docs/10_PROJECT_GOVERNANCE/REPOSITORY_AUDIT.md — audit repository.
-- docs/10_PROJECT_GOVERNANCE/REQUIREMENTS_TRACEABILITY_MATRIX.md — truy vết yêu cầu.
-- docs/10_PROJECT_GOVERNANCE/IMPLEMENTATION_PLAN.md — 12 giai đoạn.
-- docs/10_PROJECT_GOVERNANCE/DECISION_LOG.md — quyết định kỹ thuật.
-- docs/10_PROJECT_GOVERNANCE/IMPLEMENTATION_STATUS.md — tiến độ triển khai có bằng chứng.
+- Repository Audit, Requirements Traceability Matrix, Implementation Plan, Decision Log và Implementation Status trong docs/10_PROJECT_GOVERNANCE/.
 
+## API foundation hiện có
 
-## Các API đã có trong feature foundation
+- Catalog: GET /api/v1/categories.
+- Citizen profile/reports: /api/v1/citizen/profile, /api/v1/citizen/reports.
+- Attachments: /api/v1/attachments và report-scoped download routes.
+- Staff review/history/status transitions: /api/v1/admin/reports.
+- Dashboard/map: /api/v1/admin/dashboard/*, /api/v1/admin/map/reports.
+- Auth: /api/v1/auth/staff/login, Google OIDC start/callback, session, CSRF và logout.
+- Dataset/model registry foundations: /api/v1/admin/datasets, /api/v1/admin/models.
 
-- Public classification catalog: `GET /api/v1/categories`.
-- Citizen identity: `GET /api/v1/citizen/profile`, `PATCH /api/v1/citizen/profile`.
-- Citizen reports: `POST/GET /api/v1/citizen/reports`, `GET /api/v1/citizen/reports/{id}`, `GET /prediction`, `GET /history`.
-- Attachments: `POST /api/v1/attachments` (multipart: `report_id` + `file`); citizen and staff download routes are report-scoped and authorization checked.
-- Staff review: `GET /api/v1/admin/reports`, detail, predictions, reviews, review creation and status transition.
-- Dashboard: `GET /api/v1/admin/dashboard/summary`, `GET /api/v1/admin/dashboard/categories`, `GET /api/v1/admin/map/reports`.
-- Auth: `POST /api/v1/auth/staff/login`, `GET /api/v1/auth/google/start`, `GET /api/v1/auth/google/callback`, `GET /api/v1/auth/me`, `GET /api/v1/auth/csrf`, `POST /api/v1/auth/logout`.
-
-Lưu ý: các endpoint trên hiện ở mức code foundation; Docker build, migration, seed và API tests cần CI thực thi trước khi được coi là validated. NLP inference chưa được cài đặt ở giai đoạn này nên report mới có prediction record trạng thái `INFERENCE_FAILED / NO_ACTIVE_MODEL`, không có nhãn AI giả.
+Xem API Specification. Các endpoint tồn tại trong code chưa đồng nghĩa toàn bộ workflow và frontend đã được nghiệm thu. External Google OAuth chưa được thử bằng credentials thật; inference chưa hoàn chỉnh, nên không tạo prediction category/confidence giả.

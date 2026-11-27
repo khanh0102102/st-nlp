@@ -2,170 +2,113 @@
 
 | Thuộc tính | Giá trị |
 |---|---|
-| Phiên bản | 1.0 |
-| Trạng thái | Proposed research baseline |
-| Bài toán | Phân loại văn bản tiếng Việt thành 11 nhóm |
+| Phiên bản | 1.1 |
+| Trạng thái | Partial implementation; real-data evaluation pending |
+| Bài toán | Phân loại văn bản tiếng Việt thành đúng 11 nhóm |
 
 ## 1. Mục tiêu
 
-Thiết kế pipeline có thể huấn luyện, đánh giá, đăng ký, triển khai và truy vết nhiều mô hình. Mục tiêu không chỉ là có prediction mà còn đo chất lượng theo từng lớp và đảm bảo confidence được diễn giải đúng.
+Thiết kế pipeline có thể huấn luyện, đánh giá, đăng ký, triển khai và truy vết nhiều mô hình. Prediction AI chỉ là đề xuất; cán bộ có quyền mới xác nhận nhãn cuối cùng.
 
-## 2. Input/Output
+## 2. Label contract và output
 
-**Input:** văn bản phản ánh đã qua validation và preprocessing version xác định.
+Input là raw report text đã qua validation. Output khi inference được triển khai phải có predicted category code, score kèm confidence type, model version, preprocessing version, timestamp và inference status.
 
-**Output tối thiểu:**
-- predicted_category_code.
-- raw_score hoặc probability vector theo semantics model.
-- confidence_value kèm confidence_type.
-- model_version.
-- preprocessing_version.
-- prediction_timestamp.
-- inference_status.
+Không gọi raw decision function là calibrated probability. Nếu UI hiển thị phần trăm cần calibration và đánh giá calibration trước.
 
-Không được gọi raw decision function là calibrated probability. Nếu UI hiển thị phần trăm, cần hiệu chỉnh và kiểm tra calibration trước.
+Label codes lấy từ classification specification và schema version. Không phụ thuộc thứ tự ngẫu nhiên từ database query.
 
-## 3. Nhóm mô hình nghiên cứu
+## 3. Model components hiện có
 
 ### 3.1. Multinomial Naive Bayes
-- Baseline nhanh cho TF-IDF/count features.
-- Dễ huấn luyện và làm mốc so sánh.
-- Cần đánh giá khi lớp/feature phụ thuộc mạnh.
-- Lưu vectorizer và label mapping cùng classifier.
 
-### 3.2. Support Vector Machine
-- Thử Linear SVM với TF-IDF.
-- Theo dõi class imbalance và class_weight.
-- Decision score không mặc định là xác suất.
-- Nếu cần probability/confidence, dùng calibration trên validation phù hợp và đánh giá calibration.
+- Code: backend/app/ml/classical.py.
+- TF-IDF word n-gram (1, 2) và MultinomialNB(alpha=1.0).
+- Có artifact save/load.
+- Score type: MODEL_PROBABILITY_UNCALIBRATED.
+
+### 3.2. Linear SVM
+
+- Dùng LinearSVC(C=1.0, class_weight="balanced").
+- Score type: RAW_DECISION_SCORE; không phải probability.
+- Có artifact save/load.
 
 ### 3.3. CNN 1D
-- Input sequence/token embedding.
-- Dùng convolution/pooling để học n-gram pattern.
-- Cần kiểm soát vocabulary, padding, max length và overfitting.
-- Lưu seed, architecture config và tokenizer.
 
-### 3.4. LSTM
-- Học thông tin trình tự token.
-- Kiểm soát sequence length, hidden size, dropout và training cost.
-- Theo dõi overfitting và thời gian inference.
-- So sánh công bằng trên cùng split và preprocessing.
+- Code: backend/app/ml/neural.py.
+- Token vocabulary có PAD/UNK, embedding, Conv1D kernels 2/3/4 và max pooling.
+- Đã kiểm thử forward với chuỗi ngắn trong CPU image.
 
-## 4. Baseline và thực nghiệm
+### 3.4. BiLSTM
 
-1. Thiết lập baseline đơn giản (majority class hoặc dummy classifier) để xác định mốc.
-2. Huấn luyện NB/SVM với TF-IDF.
-3. Thử CNN 1D và LSTM nếu dữ liệu/nguồn lực phù hợp.
-4. Giữ cố định train/validation/test split khi so sánh.
-5. Tune hyperparameters trên validation/cross-validation.
-6. Chỉ đánh giá cuối cùng một lần trên held-out test.
-7. Lưu toàn bộ config và kết quả để tái lập.
+- Embedding + bidirectional LSTM + packed sequence + classification head.
+- Model artifact có state dict, vocabulary và label codes.
 
-## 5. Metrics
+Neural CPU dependencies nằm trong backend/requirements-neural.txt; không cài vào API runtime.
 
-Bắt buộc xem xét:
+## 4. Evaluation metrics
+
+backend/app/ml/metrics.py triển khai:
 - Accuracy.
-- Precision, Recall, F1-score theo từng lớp.
-- Macro-F1 để phản ánh các lớp hiếm.
-- Weighted-F1 để bổ sung góc nhìn theo support.
-- Confusion Matrix.
-- Support/count từng lớp.
+- Precision/Recall/F1 macro và weighted.
+- Per-class precision/recall/F1/support.
+- Confusion matrix theo label order cố định.
+- Chuyển kết quả sang metric rows tương thích training_metrics.
 
-Nếu model xuất probability và cần dùng confidence:
-- Calibration curve/reliability diagram.
-- Brier score hoặc log loss khi phù hợp.
-- Expected calibration error nếu phương pháp được định nghĩa rõ.
+Macro-F1 quan trọng với lớp hiếm; không dùng accuracy đơn lẻ để chọn model.
 
-Không dùng accuracy đơn lẻ làm tiêu chí chọn model khi dữ liệu mất cân bằng.
+Calibration curve, Brier score, log loss và ECE chưa được triển khai/đánh giá trong baseline này.
 
-## 6. Xử lý mất cân bằng lớp
+## 5. Training boundary
 
-Đầu tiên phải báo cáo phân bố. Có thể đánh giá class weights, resampling hoặc data augmentation có kiểm soát. Mọi kỹ thuật chỉ áp dụng trên train data; không resample validation/test. Không tạo sample tổng hợp khiến nhãn sai hoặc rò rỉ.
+Training CLI: backend/app/ml/cli.py. Lệnh CLI --help được smoke-test trong Docker CI.
 
-## 7. Model artifact và registry
+- Classical dependencies và underthesea nằm ở ML image.
+- PyTorch CPU wheel được cài trong training/test image riêng.
+- ml-trainer bật qua Compose profile training.
+- API runtime không cài PyTorch.
+- Artifacts lưu vào named volume model_artifacts_data; model registry lưu URI/checksum/metrics metadata.
 
-Mỗi Model Version cần:
-- model_family và version.
-- artifact URI/storage key và checksum.
-- source training_run_id.
-- dataset version.
-- preprocessing version.
-- label schema version.
-- hyperparameters/architecture config.
-- metrics summary và evaluation report.
-- created/approved/activated by/time.
-- status và deployment target.
+Training orchestration có kiểm tra dataset FROZEN, đủ ba split, đủ 11 classes trong TRAIN và không để fingerprint giống nhau rơi vào nhiều split. Tuy nhiên, một lần training với dataset thật/approved chưa được xác minh end-to-end.
 
-Không commit checkpoint lớn vào Git. Dùng artifact storage được cấu hình.
+## 6. Inference flow mục tiêu và giới hạn hiện tại
 
-## 8. Inference flow
+Inference service phải:
+1. Load model APPROVED/ACTIVE.
+2. Verify artifact checksum và label/preprocessing schema.
+3. Preprocess report bằng đúng version.
+4. Predict với đúng score semantics.
+5. Validate category thuộc 11 codes.
+6. Append prediction history.
+7. Không set final category; final label chỉ do authorized review.
 
-1. Validate text.
-2. Load active model version đã được phê duyệt.
-3. Nạp preprocessing artifact đúng version.
-4. Tạo feature/sequence.
-5. Gọi model.predict/predict_proba/decision_function theo contract.
-6. Chuẩn hóa output sang label code và score semantics.
-7. Validate label thuộc 11 classes.
-8. Ghi prediction cùng model/preprocess version.
-9. Trả kết quả an toàn cho ứng dụng.
+Giới hạn hiện tại: authenticated inference service chưa được hoàn thiện. Khi không có active model, không được bịa category/confidence hoặc dùng OTHER mặc định.
 
-Nếu model không sẵn sàng, trả trạng thái lỗi; không dùng nhãn mặc định để giả lập dự đoán.
+## 7. Human-in-the-loop
 
-## 9. Human-in-the-loop
-
-- Prediction ban đầu được giữ bất biến.
+- Prediction ban đầu được giữ lịch sử riêng.
 - Cán bộ xác nhận hoặc sửa nhãn.
-- Review được lưu riêng với actor/time/reason.
-- Dữ liệu review chỉ trở thành training sample sau validation và approval.
-- Đo acceptance rate, correction rate và phân tích nhầm lẫn theo category.
+- Review lưu actor/time/reason theo append-only.
+- reports.final_category_id chỉ đổi qua authorized review.
+- Reviewed examples chỉ được đưa vào dataset sau validation và approval.
 
-## 10. Model promotion
+## 8. Promotion
 
-Điều kiện đề xuất trước activation:
-- Evaluation trên dataset version cố định.
-- Đạt ngưỡng metrics đã được duyệt.
-- Không suy giảm nghiêm trọng ở lớp quan trọng.
-- Confidence/calibration được đánh giá nếu sử dụng.
-- Model artifact/checksum hợp lệ.
-- Inference smoke test thành công.
-- Có rollback về version trước.
+Trước activation cần evaluation trên dataset version cố định, metrics theo lớp, artifact/checksum verification, confidence calibration nếu có sử dụng, smoke test và rollback. Numeric thresholds và production approval vẫn TBD.
 
-Ngưỡng số học và người phê duyệt: TBD.
+## 9. Giới hạn/rủi ro
 
-## 11. Monitoring
+- Chưa có real labeled dataset được chủ dự án phê duyệt.
+- Imbalance, label inconsistency, local spelling/slang và distribution shift chưa được đo.
+- NB probability chưa calibration.
+- SVM decision score không phải probability.
+- Component tests không chứng minh model quality.
+- Không tự động retrain/promote từ drift alert.
 
-Theo dõi:
-- inference latency/error rate.
-- phân phối category và score.
-- tỷ lệ low-confidence/needs-review.
-- tỷ lệ cán bộ sửa nhãn.
-- data drift và performance drift khi có ground truth.
-- model version đang active.
+## 10. Work tiếp theo
 
-Không tự động retrain/promote chỉ dựa vào drift alert.
-
-## 12. Rủi ro và giới hạn
-
-- Dataset nhỏ/mất cân bằng.
-- Label inconsistency.
-- Ngôn ngữ địa phương, viết tắt, lỗi chính tả.
-- Distribution shift theo thời gian/khu vực.
-- Confidence không calibration.
-- Bias giữa các loại phản ánh.
-- Model artifact không tương thích preprocessing.
-
-Báo cáo phải trình bày hạn chế và trường hợp model không nên được tin cậy.
-
-
-## 13. Label schema và Database mapping
-
-Mô hình phải phân loại vào chính xác 11 category_code trong [CLASSIFICATION_SPECIFICATION](../01_REQUIREMENTS/CLASSIFICATION_SPECIFICATION.md). Label encoder/decoder phải lưu label_schema_version và mapping đầy đủ; không phụ thuộc thứ tự ngẫu nhiên của database query hoặc tên hiển thị.
-
-Mỗi model_versions record phải lưu model_family, algorithm_name, version_label, text_representation, preprocessing_version, label_schema_version, source training_run_id, artifact_uri/checksum, hyperparameters và metrics summary. Một prediction phải tham chiếu report_id, preprocessing_run_id, model_version_id và predicted_category_id. Prediction failed/insufficient-information không được gán OTHER mặc định.
-
-Training_metrics phải lưu metric_name/value, data_split, averaging và category_id cho kết quả theo lớp; tối thiểu báo cáo Accuracy, Precision, Recall, Macro F1 và Weighted F1. Không tạo metric giả hoặc điền metrics nếu không có evaluation output thật. Dataset/model của các lần chạy phải dùng cùng label schema để so sánh công bằng.
-
-## 14. Ý nghĩa class OTHER
-
-OTHER là class thứ 11 trong tập supervised classification, không phải catch-all cho lỗi input. Input rỗng/không hợp lệ, văn bản thiếu thông tin và inference error phải được biểu diễn bằng status riêng; prediction category có thể NULL khi inference không thành công hoặc không thể xác định.
+1. DB integration test full training orchestration trên synthetic CI data (chỉ xác minh mechanics, không dùng để báo cáo chất lượng mô hình).
+2. Chạy train execution và artifact registration trên frozen approved dataset.
+3. Implement authenticated inference API/service.
+4. Thực hiện evaluation và calibration trên real/approved dataset.
+5. Hoàn thiện model approval/activation/rollback tests.

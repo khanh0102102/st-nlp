@@ -2,210 +2,165 @@
 
 | Thuộc tính | Giá trị |
 |---|---|
-| Phiên bản | 1.0 |
-| Trạng thái | Template — chờ stack và service được chốt |
-| Orchestration | Docker Compose — bắt buộc cho local development và là baseline container deployment |
+| Phiên bản | 1.1 |
+| Trạng thái | Local Docker foundation — CI verified; production deployment chưa sẵn sàng |
+| Orchestration | Docker Compose |
 
-## 1. Phạm vi
+## 1. Phạm vi và trạng thái đã xác minh
 
-Tài liệu là khung vận hành cho local, test, staging và production.
+Repository có Docker Compose stack gồm PostgreSQL 18.7, FastAPI, React/Vite build được phục vụ bởi Nginx. CI run #14 trên code commit 4af33cedd814c69784a47fe37cc4b8924668a02f đã xác minh:
 
-**Yêu cầu của chủ dự án:** máy cá nhân không cài runtime hoặc dependency riêng của ST-NLP. Toàn bộ Frontend, Backend, Database, Worker, NLP/ML và công cụ kiểm thử phải được chạy trong Docker container.
+- docker compose config --quiet và build các image app/test.
+- Alembic migration trên PostgreSQL mới.
+- Seed/verify chính xác 11 danh mục.
+- 33 backend tests passed, 1 test skip trong API runtime image.
+- 8 CNN/LSTM neural component tests passed trong CPU ML test image.
+- ML trainer CLI --help chạy thành công.
+- Khởi động stack và kiểm tra frontend/API liveness/readiness.
 
-**Trạng thái repository hiện tại:** docker-compose.yml mới là placeholder với services rỗng; chưa có Dockerfile hoặc service thực tế. Vì vậy lệnh khởi chạy mục tiêu bên dưới chưa chạy được cho đến khi AI triển khai đầy đủ Dockerfiles, Compose services, cấu hình và healthchecks.
+CI không chứng minh Google OAuth với tài khoản thật, frontend portal đầy đủ, training run trên dataset thật hoặc production readiness.
 
-## 2. Môi trường
+## 2. Branch hiện tại
 
-- **Local:** phát triển và debug; dùng dữ liệu giả lập.
-- **Test/CI:** tự động test, database/storage riêng.
-- **Staging:** gần cấu hình production, dữ liệu đã ẩn danh.
-- **Production:** dữ liệu thật, secret manager, TLS, backup và monitoring.
+Code triển khai đang nằm trên feature/project-foundation. Nhánh main chưa nhận các commit này. Cho đến khi pull request được xem xét và merge theo quyết định của chủ dự án, clone branch triển khai bằng:
 
-Không dùng cùng secret/database giữa các môi trường.
-
-## 3. Prerequisites
-
-### Công cụ duy nhất cần có trên máy host
-
-- Git để clone repository.
-- Docker Desktop (Windows/macOS) hoặc Docker Engine + Docker Compose plugin (Linux).
-- Trình duyệt web.
-- IDE/editor là tùy chọn.
-
-**Không cài trên host:** Python, Node.js, npm/pnpm/yarn, PostgreSQL/MySQL, Redis, thư viện NLP/ML, compiler hoặc package manager của dự án.
-
-Docker Desktop/Engine là yêu cầu hệ thống; Docker sẽ tải base images và build dependency vào image/container. Điều đó không đồng nghĩa với việc cài thư viện dự án vào Windows/macOS/Linux host.
-
-Credential của Google OAuth hoặc map provider, nếu cần cho chức năng tích hợp thật, phải được cung cấp riêng qua .env/secret. Credential không phải thư viện và không được commit.
-
-## 4. Clone repository
-
-    git clone https://github.com/khanh0102102/st-nlp.git
+    git clone --branch feature/project-foundation --single-branch https://github.com/khanh0102102/st-nlp.git
     cd st-nlp
 
-Đọc AGENTS.md và docs trước khi tạo service.
+Không dùng clone mặc định nếu cần đúng implementation hiện tại.
 
-## 5. Environment configuration
+## 3. Công cụ trên máy host
 
-Khi .env.example được bổ sung, copy thành .env nếu môi trường cần cấu hình riêng. Giá trị local mặc định nên được thiết kế để các container cơ bản có thể khởi động mà không cần secret bên ngoài. Không commit .env thật.
+Cần có Git, Docker Desktop trên Windows/macOS hoặc Docker Engine và Compose plugin trên Linux, cùng trình duyệt web.
 
-Google OAuth thật và một số map provider có thể cần credential. Khi thiếu credential, ứng dụng phải báo cấu hình chưa đầy đủ hoặc cung cấp chế độ local development được cô lập rõ ràng; tuyệt đối không vô hiệu hóa bảo mật trong staging/production.
+Không cần cài Python, Node.js, npm, pip, PostgreSQL, thư viện NLP/ML hoặc compiler của dự án trên host. Dependencies được cài khi build image.
 
-Nhóm biến dự kiến:
-- APP_ENV, APP_SECRET_KEY, APP_BASE_URL.
-- DATABASE_URL.
-- GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI.
-- SESSION/JWT configuration theo auth strategy.
-- STORAGE endpoint/bucket/credentials.
-- MAP provider key.
-- MODEL_REGISTRY/ARTIFACT_STORAGE.
-- LOG_LEVEL, CORS_ALLOWED_ORIGINS.
+Google OAuth credentials và các secret tích hợp thật phải được cấu hình qua .env/secret manager; không commit secret.
 
-Tên biến cuối cùng phải thống nhất với code/config schema; không tự tạo nhiều tên tương tự.
+## 4. Khởi động local
 
-## 6. Docker Compose
+.env.example đã có trong repository. Các mặc định local đủ cho stack cơ bản. Sao chép file khi cần cấu hình riêng.
 
-File docker-compose.yml hiện chỉ là placeholder tên dự án và services rỗng để giữ vị trí cấu hình. Chưa có service chạy được. Sau khi chốt stack, bổ sung:
-- frontend service hoặc hai frontend service.
-- backend API.
-- worker nếu có.
-- database.
-- cache/queue nếu cần.
-- local object storage nếu cần.
+PowerShell:
 
-### Khởi động mục tiêu sau khi clone
+    Copy-Item .env.example .env
 
-    git clone https://github.com/khanh0102102/st-nlp.git
-    cd st-nlp
+Bash:
+
+    cp .env.example .env
+
+Khởi động:
+
     docker compose up --build -d
-
-Mục tiêu nghiệm thu là lệnh cuối cùng tự build image, khởi động các service, chờ Database healthy, chạy migration/seed an toàn và đưa ứng dụng lên trạng thái sẵn sàng. Người dùng không phải chạy pip install, npm install hoặc cài database trên host.
-
-### Lệnh quản trị
-
-Kiểm tra cấu hình:
-
-    docker compose config
-
-Xem trạng thái:
-
     docker compose ps
+
+Mở http://localhost:8080.
 
 Xem log:
 
     docker compose logs -f
+    docker compose logs -f api
 
-Dừng service nhưng giữ dữ liệu named volume:
+Dừng stack và giữ dữ liệu:
 
     docker compose down
 
-Chạy test trong container (thay <service> và <test-command> theo Compose thực tế):
+Cảnh báo: docker compose down -v xóa named volumes gồm database, uploads, model artifacts và audit local. Không chạy lệnh này khi cần giữ dữ liệu.
 
-    docker compose run --rm <service> <test-command>
+## 5. Compose services và profiles
 
-Chạy lệnh trong container đang chạy:
+- Default stack: db, api, web.
+- api-test ở profile test: chạy Alembic, seed và backend pytest.
+- ml-test ở profile test: chạy CNN/LSTM component tests trong image có CPU PyTorch.
+- ml-trainer ở profile training: CLI huấn luyện riêng. API runtime không cài thư viện ML nặng.
 
-    docker compose exec <service> <command>
+CI chạy test profiles riêng biệt rồi mới khởi động stack bình thường. Không bật trainer như service nền khi không huấn luyện.
 
-**Cảnh báo:** `docker compose down -v` xóa named volumes và có thể xóa Database/dữ liệu; chỉ dùng khi chủ động reset dữ liệu local.
+## 6. Migration và seed
 
-Không tuyên bố lệnh one-command hoạt động cho đến khi đã build/test trên môi trường sạch.
+Khi database healthcheck đạt, API entrypoint chạy Alembic upgrade head, seed 11 danh mục rồi khởi động Uvicorn.
 
-## 7. Database migration
+CI đã xác minh migration trên database mới và seed idempotent đúng 11 danh mục. Schema baseline vẫn đúng 12 bảng nghiệp vụ; không thêm bảng nếu chưa được chủ dự án chấp thuận.
 
-Migration tool và migration command phải chạy bên trong container; không yêu cầu người dùng cài DB client hoặc migration CLI trên host.
+Với staging/production, migration cần release procedure, backup, approval và kiểm soát chạy một lần; không xem cơ chế local entrypoint là production migration strategy đã được nghiệm thu.
 
-Local Compose nên có quy trình migration tự động an toàn (ví dụ one-shot migration service phụ thuộc Database healthcheck, Backend chờ migration hoàn tất). Seed phải idempotent. Không chạy migration đồng thời ở nhiều replica.
+## 7. Kiểm thử trong Docker
 
-Với staging/production:
-1. Kiểm tra DATABASE_URL và target environment qua secret/config.
-2. Backup trước migration rủi ro.
-3. Chạy migration bằng release/migration container.
-4. Kiểm tra schema/version.
-5. Chạy smoke test.
-6. Ghi migration version vào release record.
+Chạy backend tests và migration/seed:
 
-Không chỉnh schema production thủ công.
+    docker compose --profile test run --build --rm api-test
 
-## 8. Static assets và upload
+Chạy neural component tests trong CPU PyTorch image:
 
-- Frontend build không được chứa secret.
-- Upload storage cần private access.
-- Signed URL có expiry ngắn nếu dùng.
-- Giới hạn upload theo policy.
-- Backup metadata và file có kế hoạch nhất quán.
+    docker compose --profile test run --build --rm --no-deps ml-test
 
-## 9. Google OAuth deployment
+Kiểm tra cấu hình:
 
-- Đăng ký origin và redirect URI chính xác theo từng môi trường.
-- Dùng HTTPS trên staging/production.
-- Không dùng wildcard redirect URI.
-- Secret OAuth chỉ nằm trong secret manager/env.
-- Kiểm tra state/nonce, logout và callback sau deployment.
+    docker compose config --quiet
 
-## 10. Model deployment
+Các lệnh trên không yêu cầu cài thư viện lên host. CI run #14 là bằng chứng được xác minh cho snapshot code nêu tại mục 1.
 
-- Artifact có checksum và version.
-- Model phải tương thích preprocessing/label mapping.
-- Chỉ kích hoạt model đã đánh giá và duyệt.
-- Có health check inference và timeout.
-- Giữ model version trước để rollback.
-- Không tự động promote model chỉ dựa trên training accuracy.
+## 8. Huấn luyện mô hình trong Docker
+
+Trainer là CLI one-shot, không phải inference service. Xem CLI:
+
+    docker compose --profile training run --build --rm --no-deps ml-trainer --help
+
+Cú pháp đã được smoke-test qua CLI --help; các lệnh train bên dưới là entrypoint triển khai, chưa được xác minh end-to-end trên dataset thật:
+
+    docker compose --profile training run --rm --no-deps ml-trainer train --dataset-id <DATASET_UUID> --model-family NB --created-by <ADMIN_USER_UUID>
+    docker compose --profile training run --rm --no-deps ml-trainer train --dataset-id <DATASET_UUID> --model-family SVM --created-by <ADMIN_USER_UUID>
+    docker compose --profile training run --rm --no-deps ml-trainer train --dataset-id <DATASET_UUID> --model-family CNN_1D --created-by <ADMIN_USER_UUID>
+    docker compose --profile training run --rm --no-deps ml-trainer train --dataset-id <DATASET_UUID> --model-family LSTM --created-by <ADMIN_USER_UUID>
+
+Điều kiện theo code hiện tại:
+
+- Dataset phải có trạng thái FROZEN.
+- Phải có sample đã gán nhãn trong đủ TRAIN, VALIDATION và TEST.
+- TRAIN phải có đủ 11 danh mục.
+- Text trùng không được rò rỉ giữa các split.
+- --seed đặt random seed; --epochs áp dụng cho CNN_1D/LSTM.
+
+Artifacts ghi vào named volume model_artifacts_data, được chia sẻ với API. Không xóa volume nếu cần giữ artifacts.
+
+Score NB là MODEL_PROBABILITY_UNCALIBRATED; score SVM là RAW_DECISION_SCORE. Không hiển thị chúng như calibrated probability hoặc tự động duyệt phản ánh.
+
+## 9. Model deployment boundary
+
+Đã có training CLI, preprocessing, metrics, NB/SVM, CNN/LSTM components và artifact metadata. Chưa có authenticated inference service hoàn chỉnh để tải model ACTIVE/APPROVED, xác minh checksum, chạy prediction và append lịch sử. Khi không có active model, API không được tạo category mặc định hoặc confidence giả.
+
+## 10. Google OAuth và secrets
+
+- Google OAuth thật cần client ID/secret, authorized origins và redirect URI chính xác.
+- Dùng HTTPS ở staging/production; không dùng wildcard redirect URI.
+- Không commit .env hoặc credentials.
+- CI hiện không xác minh luồng Google account thật.
 
 ## 11. Production checklist
 
 - [ ] Domain và TLS.
-- [ ] OAuth origins/callback chính xác.
-- [ ] Secret manager.
+- [ ] Secret manager và rotation.
+- [ ] Google OAuth thật đã được xác minh.
 - [ ] DB private network, least-privilege account.
-- [ ] Migrations đã kiểm tra.
-- [ ] File storage private và backup.
-- [ ] CORS/rate limit/headers.
-- [ ] Admin account/role review.
-- [ ] Audit/logging/monitoring.
-- [ ] Backup/restore test.
-- [ ] Model artifact verified và rollback plan.
-- [ ] Smoke test các luồng trọng yếu.
+- [ ] Backup/restore test và RPO/RTO.
+- [ ] File storage private, malware scanning và retention.
+- [ ] CORS/rate limit/security headers.
+- [ ] Staff MFA và provisioning policy.
+- [ ] Audit sink bền vững, monitoring/alerting.
+- [ ] Inference service có auth, timeout và model rollback.
+- [ ] Model được đánh giá/duyệt trên dataset có nguồn gốc hợp lệ.
+- [ ] Citizen/Admin portals và E2E workflows hoàn chỉnh.
 - [ ] Privacy notice/retention policy.
-- [ ] Release note và người trực vận hành.
+- [ ] Release note và vận hành.
 
 ## 12. Rollback
 
-Rollback phải xét cả application, database và model:
 - App: deploy lại image/version trước.
-- Model: chuyển active reference về model version đã lưu.
-- Database: ưu tiên forward-fix; chỉ restore backup khi có kế hoạch rõ vì có thể mất dữ liệu mới.
-- File: bảo toàn storage version/backup.
-- Mọi rollback cần ghi audit và thông báo người phụ trách.
+- Model: chỉ chuyển về version đã duyệt và đã lưu checksum.
+- Database: ưu tiên forward-fix; restore backup chỉ khi có kế hoạch mất dữ liệu rõ ràng.
+- Files: bảo toàn storage version/backup.
+- Mọi rollback cần ghi audit.
 
 ## 13. TBD
 
-Hosting platform, domain, TLS provider, DB engine, storage, map provider, CI/CD, secret manager, monitoring, backup frequency, RPO/RTO và deployment approval.
-
-## Huấn luyện mô hình trong Docker
-
-API runtime không cài các thư viện ML nặng. Image huấn luyện riêng được bật bằng profile `training` và dùng chung PostgreSQL cùng named volume `model_artifacts_data` với API.
-
-Khởi động stack trước để API thực hiện migration và seed:
-
-```bash
-docker compose up --build -d
-```
-
-Build image huấn luyện và xem CLI:
-
-```bash
-docker compose --profile training build ml-trainer
-docker compose --profile training run --rm ml-trainer --help
-```
-
-Huấn luyện NB hoặc SVM trên một dataset đã ở trạng thái FROZEN:
-
-```bash
-docker compose --profile training run --rm ml-trainer train --dataset-id <DATASET_UUID> --model-family NB --created-by <ADMIN_USER_UUID>
-docker compose --profile training run --rm ml-trainer train --dataset-id <DATASET_UUID> --model-family SVM --created-by <ADMIN_USER_UUID>
-```
-
-Có thể dùng `--seed` và `--epochs` để cấu hình lần chạy; `--epochs` chỉ áp dụng cho CNN_1D/LSTM. Các model artifacts được lưu trong named volume dùng chung với API. Không xóa volume nếu cần giữ model artifacts hoặc dữ liệu PostgreSQL.
-
-Lưu ý: training yêu cầu dataset FROZEN có đủ ba split TRAIN/VALIDATION/TEST, và TRAIN phải có đủ 11 category. Score của SVM là `RAW_DECISION_SCORE`; xác suất Naive Bayes là `MODEL_PROBABILITY_UNCALIBRATED`. Cả hai chưa được coi là calibrated probability.
+Hosting platform, domain, TLS provider, production storage, map/geocoding provider, secret manager, monitoring, retention, backup frequency, RPO/RTO và deployment approval vẫn mở. CI local foundation không phải production certification.
