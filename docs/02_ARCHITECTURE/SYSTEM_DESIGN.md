@@ -113,3 +113,23 @@ Response lỗi phải có mã ổn định, thông điệp an toàn và correlat
 - Database isolation/concurrency strategy.
 - State machine phản ánh.
 - Cách phân trang, timezone và map aggregation.
+
+
+## 12. Data contract theo baseline 12 bảng
+
+- Report: reports giữ raw_content, user_id, vị trí, status và final_category_id. final_category_id chỉ được ghi sau khi cán bộ xác nhận; ban đầu NULL.
+- Attachment: report_attachments giữ metadata và storage_key; file binary nằm ngoài Database.
+- Preprocessing: mỗi lần xử lý sinh preprocessing_runs gắn report_id và preprocessing_version. Nội dung gốc không bị biến đổi.
+- Prediction: predictions gắn report_id, preprocessing_run_id, model_version_id và predicted_category_id. Prediction thất bại có inference_status/error_code và không bị ép nhãn OTHER.
+- Review: prediction_reviews ghi lịch sử append-only. Backend kiểm tra prediction/report nhất quán, rồi trong transaction thêm review và cập nhật reports.final_category_id.
+- Dataset: mỗi row datasets đại diện một version; parent_dataset_id thể hiện lineage. Version FROZEN bất biến.
+- Dataset Sample: dataset_samples liên kết dataset_id, category_id, split, labeling_status và provenance từ report/review nếu được phép.
+- Training: training_runs gắn một dataset version cụ thể; training_metrics lưu metric_name/value/split/averaging/category_id. model_versions giữ artifact và training_run_id nguồn.
+
+## 13. Catalog phân loại dùng chung
+
+Catalog cố định 11 nhóm và code nằm trong [CLASSIFICATION_SPECIFICATION](../01_REQUIREMENTS/CLASSIFICATION_SPECIFICATION.md). Không hard-code nhiều bản danh sách khác nhau; seed, API, Dashboard và ML label encoder phải đồng bộ. Bài toán baseline single-label; OTHER khác với insufficient information hoặc inference failure.
+
+## 14. Audit khi giữ giới hạn 12 bảng
+
+Không tạo bảng audit_logs trong schema baseline. Các event thay đổi quyền, report status, review, dataset freeze và model activation/rollback phải phát qua audit sink append-only bên ngoài DB. Review history vẫn nằm trong prediction_reviews. Cơ chế bền vững, retention và chống sửa/xóa của sink cần chọn trước production.
