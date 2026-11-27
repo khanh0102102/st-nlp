@@ -12,7 +12,9 @@ Mô tả luồng nghiệp vụ từ khi người dân gửi phản ánh đến k
 
 ## 2. Quy trình tiếp nhận và dự đoán
 
-    flowchart TD
+```mermaid
+flowchart TD
+```
       A[Người dân đăng nhập Google] --> B[Tạo phản ánh]
       B --> C[Nhập văn bản, chọn ảnh, vị trí]
       C --> D{Dữ liệu hợp lệ?}
@@ -37,7 +39,9 @@ Mô tả luồng nghiệp vụ từ khi người dân gửi phản ánh đến k
 
 ## 3. Quy trình cán bộ kiểm duyệt
 
-    flowchart TD
+```mermaid
+flowchart TD
+```
       A[Cán bộ đăng nhập Admin Portal] --> B[Danh sách phản ánh cần xem]
       B --> C[Mở chi tiết]
       C --> D[Xem nội dung, ảnh, vị trí và prediction]
@@ -60,7 +64,9 @@ Mô tả luồng nghiệp vụ từ khi người dân gửi phản ánh đến k
 
 ## 4. Quy trình quản lý Dataset
 
-    flowchart TD
+```mermaid
+flowchart TD
+```
       A[AI/Data Manager tạo hoặc chọn Dataset] --> B[Thêm/import samples]
       B --> C[Chuẩn hóa schema và label]
       C --> D[Validate dữ liệu]
@@ -80,7 +86,9 @@ Mô tả luồng nghiệp vụ từ khi người dân gửi phản ánh đến k
 
 ## 5. Quy trình huấn luyện và quản lý model
 
-    flowchart TD
+```mermaid
+flowchart TD
+```
       A[Chọn Dataset Version] --> B[Chọn thuật toán và cấu hình]
       B --> C[Tạo Training Run]
       C --> D[Huấn luyện]
