@@ -1,0 +1,60 @@
+# Git metadata
+.git
+.gitignore
+.github
+
+# Secrets and environment-specific configuration
+.env
+.env.*
+!.env.example
+secrets/
+*.pem
+*.key
+
+# Python runtime/cache
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# JavaScript dependencies/build outputs
+node_modules/
+.npm/
+.pnpm-store/
+.next/
+.nuxt/
+dist/
+coverage/
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Runtime data and generated files
+logs/
+tmp/
+temp/
+uploads/
+media/
+artifacts/
+checkpoints/
+models/
+*.log
+*.pid
+
+# Local database/dump files
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.sql.gz
+
+# Notebooks
+.ipynb_checkpoints/
