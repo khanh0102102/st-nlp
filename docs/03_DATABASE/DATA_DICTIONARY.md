@@ -143,7 +143,7 @@ Chỉ một trong processed_text và processed_artifact_key được dùng theo 
 | id | UUID | No | PK | ID kết quả dự đoán |
 | report_id | UUID | No | FK reports.id, index | Phản ánh được phân loại |
 | preprocessing_run_id | UUID | No | FK preprocessing_runs.id | Lần tiền xử lý dùng để infer |
-| model_version_id | UUID | No | FK model_versions.id | Phiên bản mô hình |
+| model_version_id | UUID | Yes | FK model_versions.id | Phiên bản mô hình; NULL nếu chưa có model active khi ghi nhận lỗi inference |
 | predicted_category_id | UUID | Yes | FK incident_categories.id, index | Nhãn AI dự đoán; NULL nếu không thành công/không thể phân loại |
 | confidence_value | NUMERIC(12,10) | Yes | CHECK theo confidence_type | Score/confidence |
 | confidence_type | VARCHAR(40) | Yes | — | calibrated_probability, probability hoặc raw_decision_score |
