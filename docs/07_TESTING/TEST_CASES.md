@@ -160,3 +160,28 @@ Khi thực thi, bổ sung: Actual Result, Pass/Fail/Blocked, Build/Commit, Teste
 | TC-AUD-003 | Cán bộ thay đổi trạng thái report hoặc role | Event ghi before/after tối thiểu, actor và request ID |
 | TC-AUD-004 | Kích hoạt hoặc rollback model version | Event ghi model version cũ/mới, actor, timestamp và outcome |
 | TC-AUD-005 | Người không có quyền đọc audit | Backend từ chối; không lộ thông tin audit |
+
+
+## 14. Report, attachment, review and dashboard API
+
+| ID | Kịch bản | Kết quả mong đợi |
+|---|---|---|
+| TC-REPORT-001 | Citizen gửi nội dung hợp lệ | Report được lưu raw_content nguyên bản; tạo preprocessing status SKIPPED và prediction INFERENCE_FAILED nếu chưa có active model |
+| TC-REPORT-002 | Citizen gửi nội dung trắng | API từ chối 422; không tạo report |
+| TC-REPORT-003 | Chỉ cung cấp latitude hoặc longitude | API từ chối 422 |
+| TC-REPORT-004 | Citizen đọc report người khác | Trả 404, không tiết lộ report tồn tại |
+| TC-UPLOAD-001 | Upload JPEG/PNG/WebP hợp lệ | Xác minh signature, lưu private volume và metadata |
+| TC-UPLOAD-002 | File giả ảnh/đổi MIME header | Từ chối 415 |
+| TC-UPLOAD-003 | File lớn hơn 10 MiB | Từ chối 413 |
+| TC-UPLOAD-004 | Upload quá 5 file/report | Từ chối 422 |
+| TC-UPLOAD-005 | User khác tải attachment | Từ chối 404 |
+| TC-REVIEW-001 | RECEIVER xác nhận category trùng predicted category | Thêm review CONFIRMED và cập nhật final_category_id atomically |
+| TC-REVIEW-002 | RECEIVER chọn category khác | Thêm review CORRECTED và cập nhật final_category_id atomically |
+| TC-REVIEW-003 | Prediction thuộc report khác | Từ chối; không đổi final_category_id |
+| TC-REVIEW-004 | Cán bộ xem review history | Các review cũ còn nguyên; không update/delete history |
+| TC-WORKFLOW-001 | Chuyển SUBMITTED -> UNDER_REVIEW | Cho phép |
+| TC-WORKFLOW-002 | Chuyển CLOSED -> trạng thái khác | Từ chối 409 |
+| TC-WORKFLOW-003 | RECEIVER reopen RESOLVED -> IN_PROGRESS | Từ chối 403 |
+| TC-WORKFLOW-004 | ADMIN reopen RESOLVED -> IN_PROGRESS | Cho phép |
+| TC-DASH-001 | Dashboard summary/category distribution | Giá trị truy vấn PostgreSQL; trả đủ 11 danh mục kể cả danh mục 0 report |
+| TC-MAP-001 | Map report filtering | Chỉ trả report có đủ latitude/longitude và áp dụng filter hợp lệ |

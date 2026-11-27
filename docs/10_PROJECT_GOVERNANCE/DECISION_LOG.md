@@ -29,7 +29,7 @@ Các lựa chọn dưới đây được chốt để bắt đầu local impleme
 | DEC-010 | Architecture | Modular monolith, one API + one React SPA, two separated portal route trees; add worker/queue only when needed | ADR-0002 | ACCEPTED FOR INITIAL IMPLEMENTATION |
 | DEC-011 | Staff auth/local workflow | Staff provisioned locally, Argon2id password hash; six-status report workflow and controlled transitions | ADR-0003 | ACCEPTED FOR LOCAL IMPLEMENTATION |
 | DEC-012 | Upload/location | Private named volume; JPEG/PNG/WebP; max 5 files/report, 10 MiB/file; WGS84/EPSG:4326; Leaflet/OSM for local demo | ADR-0003 | ACCEPTED FOR LOCAL IMPLEMENTATION |
-| DEC-013 | Confidence/audit | Preserve confidence_type, no uncalibrated percentages/threshold auto-approval; local JSONL audit sink | ADR-0004 | ACCEPTED FOR INITIAL IMPLEMENTATION |
+| DEC-013 | Confidence/audit | Preserve confidence_type, no uncalibrated percentages/threshold auto-approval; local JSONL audit sink | ADR-0004 | ACCEPTED FOR INITIAL IMPLEMENTATION |\n| DEC-014 | Authentication libraries | Authlib 1.9.10 for OIDC, pwdlib[argon2] 0.4.2 for Argon2id, itsdangerous 2.2.0 for signed sessions/CSRF | ADR-0003 | ACCEPTED FOR LOCAL IMPLEMENTATION |
 
 ## 3. Trade-offs and implementation controls
 
@@ -56,7 +56,7 @@ Các lựa chọn dưới đây được chốt để bắt đầu local impleme
 
 ## 5. Quy tắc quản lý quyết định
 
-- Các DEC-007..013 được đánh dấu ACCEPTED FOR INITIAL/LOCAL IMPLEMENTATION theo quyền triển khai được chủ dự án giao trong Master Prompt; không diễn giải thành production approval.
+- Các DEC-007..014 được đánh dấu ACCEPTED FOR INITIAL/LOCAL IMPLEMENTATION theo quyền triển khai được chủ dự án giao trong Master Prompt; không diễn giải thành production approval.
 - Các TBD ở mục 4 không được tự động chốt bằng cách đặt giá trị mặc định rồi dùng trên production.
 - Mỗi quyết định ảnh hưởng Database/API/security phải cập nhật ADR, docs chuyên ngành và RTM trong cùng PR.
 - Không đánh dấu chức năng/test là hoàn thành nếu chưa có source và evidence.

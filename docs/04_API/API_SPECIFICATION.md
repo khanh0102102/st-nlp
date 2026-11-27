@@ -187,3 +187,47 @@ Dataset sample API chỉ chấp nhận category_code thuộc 11 danh mục hoặ
 Database baseline đúng 12 bảng theo [DATABASE_DESIGN](../03_DATABASE/DATABASE_DESIGN.md). predictions phải truy được report, preprocessing run và model version; prediction_reviews là lịch sử append-only; mỗi row datasets là một version; training_metrics hỗ trợ metric tổng thể/per-class/per-split. API contract không được yêu cầu bảng phụ không có trong baseline.
 
 Audit event nhạy cảm được gửi qua audit sink append-only ngoài 12 bảng. Việc gửi audit cần xử lý lỗi/retry theo chính sách; không ghi secret, token hoặc raw report vào audit.
+
+
+---
+
+## Implementation mapping — Foundation API (2026-11-27)
+
+Các route dưới đây đã được tạo trên feature branch; đây là hiện trạng mã nguồn, không đồng nghĩa đã vượt Docker CI.
+
+| Method | Endpoint | Access | Chức năng |
+|---|---|---|---|
+| GET | `/api/v1/categories` | Public | Danh mục active, đúng 11 codes |
+| POST | `/api/v1/auth/staff/login` | Public | Staff local login |
+| GET | `/api/v1/auth/google/start` | Public/config required | Bắt đầu Google OIDC |
+| GET | `/api/v1/auth/google/callback` | Provider callback | Google OIDC callback |
+| GET | `/api/v1/auth/me` | Authenticated | Principal hiện tại |
+| GET | `/api/v1/auth/csrf` | Authenticated | Cấp signed CSRF token |
+| POST | `/api/v1/auth/logout` | Authenticated + CSRF | Logout |
+| GET/PATCH | `/api/v1/citizen/profile` | Citizen | Xem/cập nhật profile |
+| POST/GET | `/api/v1/citizen/reports` | Citizen | Tạo phản ánh / lịch sử phản ánh |
+| GET | `/api/v1/citizen/reports/{report_id}` | Owner | Chi tiết phản ánh |
+| GET | `/api/v1/citizen/reports/{report_id}/prediction` | Owner | Kết quả prediction gần nhất |
+| GET | `/api/v1/citizen/reports/{report_id}/history` | Owner | Timeline từ local audit sink |
+| POST | `/api/v1/attachments` | Authenticated + owner check | Multipart upload với `report_id` và `file` |
+| GET | `/api/v1/citizen/reports/{report_id}/attachments/{attachment_id}` | Owner | Download minh chứng |
+| GET | `/api/v1/admin/categories` | RECEIVER/ADMIN | Catalog cho khu quản trị |
+| GET | `/api/v1/admin/reports` | RECEIVER/ADMIN | Tìm kiếm/lọc/phân trang |
+| GET | `/api/v1/admin/reports/{report_id}` | RECEIVER/ADMIN | Chi tiết phản ánh và prediction history |
+| GET | `/api/v1/admin/reports/{report_id}/predictions` | RECEIVER/ADMIN | Lịch sử dự đoán |
+| POST/GET | `/api/v1/admin/reports/{report_id}/reviews` | RECEIVER/ADMIN | Tạo/xem lịch sử kiểm duyệt |
+| PATCH | `/api/v1/admin/reports/{report_id}/status` | RECEIVER/ADMIN | Chuyển trạng thái theo workflow |
+| GET | `/api/v1/admin/dashboard/summary` | RECEIVER/ADMIN | Thống kê tổng và trạng thái |
+| GET | `/api/v1/admin/dashboard/categories` | RECEIVER/ADMIN | Thống kê theo 11 category |
+| GET | `/api/v1/admin/map/reports` | RECEIVER/ADMIN | Tọa độ phản ánh để render map |
+
+### Semantics đang áp dụng ở bản foundation
+
+- Report luôn được lưu trước. Khi chưa có active ML model, hệ thống ghi một preprocessing run SKIPPED và prediction `INFERENCE_FAILED` với `NO_ACTIVE_MODEL`; không tự gán `OTHER`.
+- `reports.raw_content` không bị sửa bởi preprocessing.
+- Review insert và update `reports.final_category_id` dùng cùng SQLAlchemy session/transaction.
+- Prediction/review rows được DB trigger bảo vệ append-only.
+- Dashboard đếm dữ liệu PostgreSQL, không dùng số mẫu cố định.
+- Upload kiểm tra magic bytes, JPEG/PNG/WebP, tối đa 10 MiB/file và tối đa 5 file/report; binary lưu ở private local volume.
+
+Những route này chưa thay thế các endpoint còn lại trong API Specification; tiếp tục mở rộng theo RTM và Use Case.

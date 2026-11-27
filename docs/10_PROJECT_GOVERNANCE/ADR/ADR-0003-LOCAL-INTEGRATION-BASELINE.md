@@ -68,3 +68,14 @@ Chưa có brand guideline; dùng design tokens trung tính, typography dễ đ�
 - Có thể xây local authentication/storage/map adapters mà không cần dịch vụ trả phí hoặc secret thật.
 - Production credentials, MFA, data retention, malware scan, object storage và map service vẫn là các cổng phát hành riêng.
 - Không thay đổi giới hạn 12 bảng hoặc 11 danh mục.
+
+
+## Implementation notes
+
+- Google OIDC routes are implemented with Authlib 1.9.10 using OIDC discovery, Authorization Code flow, PKCE S256 and Authlib state validation through a short-lived Starlette session cookie.
+- Local staff passwords use Argon2id through pwdlib[argon2] 0.4.2; local CLI requires at least 12 characters and stores only the password hash.
+- Application session is signed, HttpOnly, SameSite=Lax and has an eight-hour max age. Account status and roles are loaded from PostgreSQL for each authenticated request.
+- Authenticated mutation requests require a signed user-bound CSRF token, matching CSRF cookie/header and origin allow-list check.
+- Citizen report API, staff review/status API and private attachment upload/download routes are implemented in the local baseline. API has no UI portal yet.
+- Google sign-in is inactive until GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET and GOOGLE_REDIRECT_URI are configured. Staff login is available using the local CLI-provisioned account.
+- Login rate limiting, staff MFA and production identity policy remain release blockers; this local auth code is not a production security certification.

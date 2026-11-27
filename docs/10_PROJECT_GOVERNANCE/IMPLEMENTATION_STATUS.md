@@ -8,20 +8,20 @@ Ngày cập nhật: 2026-11-27
 - Base branch: main
 - Base commit: a6f817e992e83332dec17148a9889aab324c0868 (PR #3 merged)
 - Working branch: feature/project-foundation
-- Current stage: Phase 1 completed; Phase 2 Project Foundation in progress.
+- Current stage: Phases 1–3 implemented at source level; Phase 4 Backend Core and Phase 5 report API foundation in progress. Docker validation pending.
 
 ## Milestone status
 
 | Giai đoạn | Trạng thái | Bằng chứng / ghi chú |
 |---|---|---|
 | 1. Audit và baseline | Completed (static) | Main/PR/tree và tài liệu đã được đối chiếu; 11 categories, 12-table baseline, RTM và plan hiện diện |
-| 2. Project Foundation | In progress | Stack ADR, Compose, API health skeleton, frontend container scaffold và env template được thêm trong nhánh này |
-| 3. Database Foundation | Not started | Chưa có models, migration hoặc seed |
-| 4. Backend Core | Not started | Chưa có auth, RBAC implementation hoặc business APIs |
+| 2. Project Foundation | Implemented; not runtime-verified | Docker Compose, PostgreSQL/API/web services, FastAPI health, React/Vite/Nginx scaffold, env template and direct dependency pins |
+| 3. Database Foundation | Implemented; not runtime-verified | Exactly 12 SQLAlchemy models, Alembic initial schema, 11-category seed and PostgreSQL integrity/immutability triggers |
+| 4. Backend Core | In progress | Local staff login, Argon2id, signed sessions/CSRF, Google OIDC adapter, role policy dependencies and staff provisioning CLI; broader security hardening pending |
 | 5. Citizen Portal | Not started | Frontend hiện chỉ là project foundation status page |
 | 6. NLP/ML | Not started | Chưa có source code model hoặc dataset |
-| 7. Admin Portal | Not started | Chưa có portal nghiệp vụ |
-| 8. Dashboard/Map | Not started | Chưa có dữ liệu/API/dashboard thật |
+| 7. Admin Portal | API foundation in progress | Admin report list/detail, prediction/review history, label review transaction and workflow transition APIs; frontend portal not implemented |
+| 8. Dashboard/Map | API foundation in progress | PostgreSQL-driven summary/category aggregates and report-coordinate API; visual dashboard/map UI not implemented |
 | 9. Dataset/ML Management | Not started | Chưa có management module |
 | 10. Integration | Not started | Chưa có end-to-end workflow |
 | 11. Testing/QA | Not started | Chưa có full suite hoặc Docker test evidence |
@@ -37,9 +37,9 @@ Ngày cập nhật: 2026-11-27
 ## Verification status
 
 - GitHub tree and source writes are reviewed through repository APIs.
-- Docker CLI is not available in the execution environment used for this repository change; Docker Compose config/build/healthchecks have NOT been executed here.
+- Docker CLI is not available in the execution environment used for this repository change; Docker Compose config/build/healthchecks, PostgreSQL migration and API tests have NOT been executed here.
 - npm package-lock and Python transitive/hash lock are pending generation and verification in Docker. Direct dependency pins are present but are not a complete lock.
-- No database migration or test suite has been executed.
+- No database migration or test suite has been executed. Static source inspection only; GitHub Actions workflow was added to run Docker Compose build, migration, seed and tests on PR.
 - No OAuth, map-provider secret, production storage, real dataset or external paid service was used.
 
 ## Required next actions
