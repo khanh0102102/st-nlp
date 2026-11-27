@@ -6,10 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(
-        case_sensitive=False,
-        extra="ignore",
-    )
+    model_config = SettingsConfigDict(case_sensitive=False, extra="ignore")
 
     app_name: str = "ST-NLP API"
     app_env: str = "development"
@@ -23,6 +20,9 @@ class Settings(BaseSettings):
     uploads_dir: Path = Path("/data/uploads")
     model_artifacts_dir: Path = Path("/data/model-artifacts")
     audit_log_path: Path = Path("/data/audit/audit-events.jsonl")
+    google_client_id: str | None = None
+    google_client_secret: SecretStr | None = None
+    google_redirect_uri: str | None = None
 
     @property
     def cors_origins(self) -> list[str]:
@@ -31,6 +31,21 @@ class Settings(BaseSettings):
             for origin in self.cors_origins_csv.split(",")
             if origin.strip()
         ]
+
+    @property
+    def google_oauth_enabled(self) -> bool:
+        secret = (
+            self.google_client_secret.get_secret_value()
+            if self.google_client_secret is not None
+            else ""
+        )
+        return bool(
+            self.google_client_id
+            and self.google_client_id.strip()
+            and secret.strip()
+            and self.google_redirect_uri
+            and self.google_redirect_uri.strip()
+        )
 
     @model_validator(mode="after")
     def reject_local_secret_outside_development(self) -> "Settings":

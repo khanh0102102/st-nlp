@@ -6,3 +6,6 @@ alembic==1.20.1
 psycopg[binary]==3.3.9
 pydantic==2.14.4
 pydantic-settings==2.16.3
+Authlib==1.9.10
+pwdlib[argon2]==0.4.2
+itsdangerous==2.2.0

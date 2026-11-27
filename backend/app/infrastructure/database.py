@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
+from sqlalchemy.orm import sessionmaker
 
 from app.core.config import get_settings
 
@@ -15,6 +16,7 @@ def build_engine() -> Engine:
 
 
 engine = build_engine()
+SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 
 def check_database_connection() -> None:
