@@ -135,13 +135,13 @@ Mỗi yêu cầu mới phải ghi: lý do, người đề xuất, lợi ích, �
 - Mục tiêu hiệu năng, chất lượng mô hình và availability.
 
 
-## 9. Danh mục phân loại và phạm vi dữ liệu
+## 11. Danh mục phân loại và phạm vi dữ liệu
 
 Phạm vi phân loại gồm chính xác 11 danh mục cố định theo tên và thứ tự do chủ dự án cung cấp. Nguồn chuẩn về mã, mô tả và ranh giới nhãn là [CLASSIFICATION_SPECIFICATION](../01_REQUIREMENTS/CLASSIFICATION_SPECIFICATION.md). Không tạo lớp thứ 12. OTHER dành cho phản ánh hợp lệ ngoài 10 nhóm; nội dung không đủ thông tin, input không hợp lệ và lỗi inference là trạng thái riêng.
 
 Baseline Database gồm đúng 12 bảng theo [DATABASE_DESIGN](../03_DATABASE/DATABASE_DESIGN.md). Ảnh và model artifact lưu ngoài relational database; report_attachments/model_versions giữ metadata và storage reference. Audit tổng quát được ghi qua audit sink append-only ngoài 12 bảng; provider và retention còn TBD.
 
-## 10. Ranh giới dữ liệu bắt buộc
+## 12. Ranh giới dữ liệu bắt buộc
 
 - Người dân không bắt buộc chọn category khi gửi; AI đưa ra nhãn đề xuất, cán bộ có quyền xác nhận/chỉnh sửa.
 - reports.raw_content giữ nguyên văn bản gốc.
