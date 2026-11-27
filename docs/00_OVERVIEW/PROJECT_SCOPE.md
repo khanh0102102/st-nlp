@@ -126,7 +126,7 @@ Mỗi yêu cầu mới phải ghi: lý do, người đề xuất, lợi ích, �
 
 ## 10. Điểm còn TBD
 
-- Danh sách chính thức và định nghĩa 11 nhóm.
+- Tên/thứ tự 11 danh mục và category_code đã được ghi trong CLASSIFICATION_SPECIFICATION.md; ranh giới nghiệp vụ và hướng dẫn adjudication cho các nhóm giao nhau cần tiếp tục được hoàn thiện/phê duyệt.
 - Danh sách trạng thái phản ánh, quyền chuyển trạng thái và quy tắc hiển thị cho người dân.
 - Có/không thông báo khi trạng thái thay đổi.
 - Giới hạn số lượng/định dạng/dung lượng ảnh.
