@@ -98,5 +98,3 @@ Dùng ablation study để so sánh raw normalization, word n-gram, char n-gram,
 Mỗi lần pipeline chạy cho một report tạo một preprocessing_runs record gồm report_id, preprocessing_version, tokenizer/library version, normalization_config, stopword_config, processing_status, processing_time_ms và error_code nếu thất bại. processed_text có thể lưu trực tiếp hoặc ở artifact storage theo privacy/retention policy. predictions phải tham chiếu preprocessing_run_id chính xác đã dùng. reports.raw_content luôn bất biến.
 
 Pipeline baseline cần hỗ trợ Unicode NFC, chuẩn hóa whitespace, tokenization tiếng Việt và cấu hình stopword theo version. **Không mặc định xóa toàn bộ stopwords**: giữ từ phủ định như không/chưa/chẳng và các từ có ý nghĩa phân loại. Chỉ áp dụng danh sách stopwords đã được đánh giá bằng ablation study; training và inference phải dùng đúng cùng version/cấu hình. Không fit vocabulary/vectorizer bằng validation/test.
-
-`+String.raw`
