@@ -27,7 +27,9 @@
 
 ## 3. Sơ đồ ngữ cảnh
 
-    flowchart LR
+```mermaid
+flowchart LR
+```
       Citizen[Người dân] --> CP[Citizen Portal]
       Staff[Cán bộ] --> AP[Admin Portal]
       CP --> API[Backend API]
