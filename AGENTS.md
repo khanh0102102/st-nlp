@@ -115,3 +115,65 @@ Một chức năng chỉ được coi là hoàn thành khi:
 - Tài liệu/API/schema/migration được cập nhật đồng bộ.
 - Không chứa secret hoặc dữ liệu thật trong fixture/log.
 - Pull Request có mô tả và bằng chứng review được.
+
+
+## 12. CHÍNH SÁCH DOCKER-ONLY — BẮT BUỘC
+
+Mục tiêu trải nghiệm của ST-NLP là: người phát triển clone repository, cài Docker Desktop (Windows/macOS) hoặc Docker Engine + Compose plugin (Linux), sau đó dùng Docker Compose để build và chạy toàn bộ hệ thống. Không yêu cầu cài runtime hoặc thư viện của dự án trực tiếp trên máy cá nhân.
+
+### 12.1. Những gì được phép cài trên máy host
+
+- Git để clone/push repository.
+- Docker Desktop hoặc Docker Engine.
+- Docker Compose plugin (thường đi kèm Docker Desktop).
+- Trình duyệt web.
+- IDE/editor là tùy chọn.
+
+Không yêu cầu cài Python, Node.js, npm/pnpm/yarn, Java, PostgreSQL/MySQL, Redis, thư viện NLP/ML, compiler hoặc package manager của dự án trên host.
+
+### 12.2. Quy tắc bắt buộc khi phát triển
+
+- Mọi runtime và dependency của Frontend, Backend, Worker, NLP/ML phải được cài trong Docker image qua Dockerfile.
+- Dependency phải được khai báo và pin phiên bản bằng manifest/lockfile trong repository.
+- Mọi dịch vụ cần để chạy hệ thống local phải được mô tả trong docker-compose.yml (hoặc file Compose override được tài liệu hóa).
+- Database, cache/queue, local object storage và worker phải chạy bằng container khi được sử dụng.
+- Mọi lệnh migration, seed, lint, type-check, test, training và script quản trị phải được thực thi qua `docker compose run` hoặc `docker compose exec`, không chạy trực tiếp bằng runtime trên host.
+- Có thể bind-mount source code để hot reload, nhưng không bind-mount thư mục dependency của host như node_modules, .venv hoặc site-packages vào container.
+- Dùng named volumes cho dữ liệu bền vững như database và model/artifact cần giữ.
+- Dùng .dockerignore để loại bỏ cache, môi trường ảo, secret, node_modules, dữ liệu upload và artifact không cần thiết khỏi build context.
+- Không yêu cầu người dùng chạy pip install, npm install, yarn, pnpm install, poetry install hoặc cài thư viện dự án trực tiếp trên host.
+- Không tạo hướng dẫn chạy Backend/Frontend bằng lệnh host như `python main.py`, `uvicorn ...`, `npm run dev` hoặc `npm start` như quy trình mặc định. Nếu cần dùng các lệnh này, phải chạy chúng bên trong container.
+- Nếu một công cụ chỉ hỗ trợ chạy trên host, trước tiên tìm cách chạy trong container; mọi ngoại lệ phải được nêu rõ và được chủ dự án chấp thuận.
+
+### 12.3. Trải nghiệm khởi chạy mục tiêu
+
+Khi hệ thống hoàn thiện, trên máy mới chỉ cần:
+1. Cài Git và Docker Desktop/Engine + Compose.
+2. Clone repository.
+3. Chạy `docker compose up --build -d`.
+
+Mục tiêu là không cần cài thư viện/runtime/database riêng trên host. Các cấu hình bí mật từ nhà cung cấp bên ngoài (ví dụ Google OAuth hoặc dịch vụ bản đồ nếu bắt buộc) vẫn phải được cung cấp qua file .env hoặc secret mechanism; không được hard-code hay commit secret.
+
+### 12.4. Thiết kế Compose để khởi chạy đơn giản
+
+- Cung cấp .env.example với các giá trị local an toàn; không chứa secret thật.
+- Cố gắng để các chức năng local không cần secret bên ngoài vẫn khởi động được.
+- Nếu cần OAuth thật, tài liệu phải chỉ rõ credential Google cần cấu hình. Có thể cung cấp chế độ mock/development auth riêng cho local test nếu được thiết kế an toàn; tuyệt đối không cho phép chế độ này ở staging/production.
+- Dùng healthcheck và depends_on condition phù hợp để service khởi động đúng thứ tự.
+- Migration/seed local phải tự động hoặc có lệnh Docker Compose duy nhất được chỉ rõ; migration phải an toàn và không phá dữ liệu.
+- Compose phải có named volumes cho database và dữ liệu cần giữ.
+- Cung cấp lệnh xem log, dừng, chạy test và reset dữ liệu; cảnh báo rõ lệnh xóa volume.
+- Không tuyên bố one-command startup hoạt động cho đến khi đã kiểm tra trên môi trường sạch.
+
+### 12.5. Kiểm thử và Definition of Done bổ sung
+
+Một thay đổi chỉ đạt khi:
+- Build Docker image thành công.
+- Các service khởi động theo Compose.
+- Healthcheck đạt.
+- Migration hoạt động trong container.
+- Test liên quan chạy được bên trong container.
+- Hướng dẫn không yêu cầu cài runtime/library dự án trên host.
+- Đã thử quy trình trên môi trường sạch hoặc CI container.
+
+Khi báo cáo, phải ghi rõ lệnh Docker đã chạy và kết quả thực tế.
