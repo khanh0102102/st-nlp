@@ -20,7 +20,9 @@ Một tài khoản có thể có nhiều role; việc gán quyền phải đư�
 
 ## 2. Sơ đồ ca sử dụng tổng quan
 
-    graph LR
+```mermaid
+graph LR
+```
       Citizen[Citizen] --> UC1((Đăng nhập Google))
       Citizen --> UC2((Tạo phản ánh))
       Citizen --> UC3((Xem lịch sử và chi tiết))
