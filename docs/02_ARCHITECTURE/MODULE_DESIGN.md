@@ -102,3 +102,23 @@ Mỗi nhiệm vụ phải ghi các module bị ảnh hưởng và PR không nên
 - Logging/audit đúng policy.
 - Không vi phạm dependency rule.
 - Tài liệu module/API/database được cập nhật.
+
+
+## 8. Mapping module với 12 bảng Database
+
+| Module | Bảng sở hữu chính | Quy tắc |
+|---|---|---|
+| Identity & Auth | users | Quản lý Citizen/Receiver/Admin; role_codes qua policy allow-list |
+| Classification Catalog | incident_categories | Seed cố định 11 danh mục, không CRUD tạo/xóa tùy ý |
+| Incident | reports | raw_content bất biến; final_category_id chỉ là nhãn đã duyệt |
+| Attachment | report_attachments | Metadata và storage key; file ngoài DB |
+| NLP Pipeline | preprocessing_runs | Versioned, mỗi lần chạy có report reference |
+| Prediction | predictions | Append-only theo lịch sử; liên kết preprocess/model/category |
+| Review | prediction_reviews | Append-only; cập nhật reports.final_category_id cùng transaction |
+| Model Registry | model_versions | Artifact, checksum, version và source training run |
+| Dataset | datasets | Mỗi row là một version; frozen bất biến |
+| Dataset Sample | dataset_samples | Category FK, split, labeling status và provenance |
+| Training | training_runs | Liên kết dataset version và cấu hình thực nghiệm |
+| Metrics & Evaluation | training_metrics | Metric tổng thể/per-class/per-split |
+
+Không có bảng roles/permissions, dataset_versions hoặc audit_logs trong giới hạn 12 bảng baseline. Permission được thực thi ở Authorization policy; audit event tổng quát phát qua sink append-only ngoài Database. Chi tiết schema tại DATABASE_DESIGN.md và DATA_DICTIONARY.md.
