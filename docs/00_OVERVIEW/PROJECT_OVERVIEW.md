@@ -147,3 +147,16 @@ Một hệ thống có ba phân hệ hoạt động thống nhất: cổng ngư�
 - [Kiến trúc tổng thể](../02_ARCHITECTURE/SYSTEM_ARCHITECTURE.md)
 - [Thiết kế Database](../03_DATABASE/DATABASE_DESIGN.md)
 - [Thiết kế AI/ML](../09_AI_ML/MODEL_DESIGN.md)
+
+
+## 12. Danh mục phân loại chính thức
+
+ST-NLP sử dụng chính xác 11 danh mục theo tên và thứ tự chủ dự án cung cấp. Danh sách chuẩn, category_code, ý nghĩa và quy tắc ranh giới nằm tại [CLASSIFICATION_SPECIFICATION](../01_REQUIREMENTS/CLASSIFICATION_SPECIFICATION.md). Không định nghĩa một danh sách riêng ở module khác.
+
+AI baseline là single-label text classification. Người dân không bắt buộc chọn category khi gửi phản ánh. AI đề xuất nhãn; cán bộ có quyền xác nhận/chỉnh sửa. OTHER là nhãn hợp lệ cho phản ánh nằm ngoài 10 nhóm còn lại; thiếu thông tin, input không hợp lệ và lỗi inference là trạng thái riêng.
+
+## 13. Baseline Database 12 bảng
+
+Database baseline đúng 12 bảng: users, incident_categories, reports, report_attachments, preprocessing_runs, model_versions, predictions, prediction_reviews, datasets, dataset_samples, training_runs và training_metrics. Chi tiết tại [DATABASE_DESIGN](../03_DATABASE/DATABASE_DESIGN.md), [ERD](../03_DATABASE/ERD.md), [DATA_DICTIONARY](../03_DATABASE/DATA_DICTIONARY.md).
+
+Đây là schema proposal để làm căn cứ implementation, không có nghĩa migration/ORM đã tồn tại. Database Engine, auth cán bộ, state machine, storage và audit sink production vẫn cần được chốt.

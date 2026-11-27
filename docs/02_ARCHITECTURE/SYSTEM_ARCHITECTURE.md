@@ -125,3 +125,12 @@ Không khuyến nghị triển khai microservices ngay khi chưa có tải, team
 - Mỗi prediction truy xuất được model version.
 - Review không ghi đè prediction gốc.
 - Có thể chạy test module mà không cần gọi Google/Map provider thật.
+
+
+## 10. Database and classification baseline
+
+Relational persistence baseline gồm đúng 12 bảng được đặc tả tại [DATABASE_DESIGN](../03_DATABASE/DATABASE_DESIGN.md): users, incident_categories, reports, report_attachments, preprocessing_runs, model_versions, predictions, prediction_reviews, datasets, dataset_samples, training_runs và training_metrics. ERD chính thức của baseline ở [ERD](../03_DATABASE/ERD.md).
+
+Catalog có đúng 11 danh mục, dùng category_code ổn định theo [CLASSIFICATION_SPECIFICATION](../01_REQUIREMENTS/CLASSIFICATION_SPECIFICATION.md). API, Frontend, Dashboard, Dataset và model label mapping phải dùng cùng catalog/version.
+
+Audit event tổng quát không được thêm vào bảng thứ 13 trong baseline. Các event cần audit đi qua audit sink append-only bên ngoài relational schema; sink phải được triển khai bền vững và kiểm soát quyền trước production. Chọn provider còn TBD.

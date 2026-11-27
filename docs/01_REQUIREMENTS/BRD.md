@@ -106,7 +106,18 @@ Giá trị mục tiêu số học: TBD; không đặt KPI giả định khi chư
 ## 10. Giả định và câu hỏi mở
 
 - Đơn vị nghiệp vụ chính thức và quy trình phê duyệt: TBD.
-- Từ điển 11 danh mục: cần cung cấp và duyệt.
+- Tên và thứ tự 11 danh mục đã được chủ dự án cung cấp và được mô tả tại CLASSIFICATION_SPECIFICATION.md; ranh giới giữa một số nhóm giao nhau cần tiếp tục được kiểm chứng bằng guideline nghiệp vụ.
 - Quy tắc SLA/trạng thái phản ánh: TBD.
 - Quy định lưu trữ, xử lý dữ liệu cá nhân và ảnh: cần xác minh.
 - Ngưỡng AI, KPI và mức độ tự động hóa: chưa chốt.
+
+
+## 11. Danh mục phân loại và quản lý dữ liệu
+
+ST-NLP phân loại phản ánh vào chính xác 11 nhóm cố định theo [CLASSIFICATION_SPECIFICATION](CLASSIFICATION_SPECIFICATION.md). Danh mục gồm Đường/Cầu/Hạ tầng hư hỏng; Điện lực/Chiếu sáng; Cống/Hố ga/Thoát nước; Vỉa hè/Lòng đường; Cây xanh/Vật cản; Biển báo; Tổ chức giao thông; Đèn tín hiệu; Rác thải/Vệ sinh môi trường; Đỗ xe cản trở; Khác.
+
+Danh sách tên/thứ tự thay thế câu hỏi mở trước đây về việc cần chủ dự án cung cấp từ điển 11 danh mục. Category code và hướng dẫn ranh giới được quản lý tập trung trong Classification Specification. Ranh giới giữa các lớp có khả năng giao nhau cần tiếp tục được kiểm chứng bằng ví dụ nghiệp vụ.
+
+OTHER chỉ dành cho phản ánh hợp lệ nhưng không thuộc 10 nhóm còn lại; thiếu thông tin và lỗi kỹ thuật được lưu bằng trạng thái riêng, không gán OTHER.
+
+Baseline Database phục vụ nghiệp vụ có đúng 12 bảng. reports giữ raw_content và final_category_id; predictions giữ nhãn AI; prediction_reviews lưu lịch sử kiểm duyệt. Dataset samples chỉ lấy từ nguồn được phép và qua validation.

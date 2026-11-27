@@ -152,6 +152,17 @@ SRS mô tả hành vi mà ST-NLP phải cung cấp cho người dân, cán bộ,
 | FR-AUD-02 | Audit ghi actor, action, resource, timestamp và kết quả; tránh lưu secret/dữ liệu nhạy cảm không cần thiết | Must |
 | FR-AUD-03 | Quyền xem audit phải được giới hạn | Must |
 
+## 6.10. Danh mục phân loại
+
+| ID | Yêu cầu | Ưu tiên |
+|---|---|---|
+| FR-CAT-01 | Hệ thống phải duy trì chính xác 11 danh mục theo CLASSIFICATION_SPECIFICATION, có category_code ổn định và thứ tự hiển thị 1–11 | Must |
+| FR-CAT-02 | API, Database, Dashboard, Dataset và NLP/ML phải dùng chung category_code/label_schema_version; không dùng tên hiển thị làm khóa | Must |
+| FR-CAT-03 | Citizen không bắt buộc chọn danh mục khi tạo phản ánh; hệ thống thực hiện phân loại văn bản bằng AI | Must |
+| FR-CAT-04 | Prediction thành công phải trả một category thuộc catalog; input không hợp lệ, thiếu thông tin và inference failure phải có trạng thái riêng, không tự động gán OTHER | Must |
+| FR-CAT-05 | Cán bộ có quyền được xác nhận nhãn AI hoặc chọn một trong 11 danh mục; mọi lần review được lưu lịch sử và không ghi đè prediction | Must |
+| FR-CAT-06 | Dashboard phải thống kê và hiển thị đủ 11 danh mục, kể cả danh mục có số lượng bằng 0 | Must |
+
 ## 7. Yêu cầu phi chức năng
 
 | ID | Nhóm | Yêu cầu |
@@ -200,3 +211,33 @@ Mỗi FR phải được ánh xạ ít nhất một test case. Nghiệm thu tổ
 ## 10. Ngoài phạm vi
 
 Tuân theo [PROJECT_SCOPE](../00_OVERVIEW/PROJECT_SCOPE.md). Bất kỳ chức năng mới nào ngoài scope phải qua quy trình change request.
+
+
+## 11. Baseline danh mục và quy tắc lưu nhãn
+
+Nguồn chuẩn của 11 danh mục là [CLASSIFICATION_SPECIFICATION](CLASSIFICATION_SPECIFICATION.md). Hệ thống phải có đúng 11 category theo thứ tự, tên và category_code tại tài liệu này; Dashboard hiển thị đủ 11 nhóm kể cả nhóm không có phản ánh.
+
+Yêu cầu phân loại:
+- Bài toán baseline là single-label; mỗi prediction/sample đã gán nhãn có một category chính trong catalog.
+- Người dân không bắt buộc tự chọn danh mục khi gửi phản ánh; AI đưa ra nhãn đề xuất.
+- Cán bộ có quyền xác nhận nhãn AI hoặc chọn một trong 11 danh mục khác.
+- OTHER là lớp hợp lệ cho phản ánh hợp lệ ngoài 10 nhóm còn lại. INSUFFICIENT_INFORMATION, INVALID_INPUT, UNLABELED, NEEDS_REVIEW và INFERENCE_FAILED là trạng thái, không phải danh mục.
+- Category code phải ổn định và được dùng thống nhất trong Database, API, Dataset, model label mapping và metrics. Không dùng tên hiển thị làm khóa.
+
+## 12. Baseline Database 12 bảng
+
+Physical design baseline đúng 12 bảng được mô tả trong DATABASE_DESIGN.md và DATA_DICTIONARY.md: users, incident_categories, reports, report_attachments, preprocessing_runs, model_versions, predictions, prediction_reviews, datasets, dataset_samples, training_runs và training_metrics.
+
+Quy tắc dữ liệu bắt buộc:
+- users quản lý cả CITIZEN, RECEIVER và ADMIN; role_codes được kiểm tra bằng allow-list/policy phía Backend. Phương thức đăng nhập cán bộ còn TBD.
+- reports.raw_content giữ nguyên văn bản người dân gửi; reports.final_category_id nullable cho đến khi cán bộ xác nhận.
+- report_attachments lưu metadata/storage key; binary lưu ngoài Database.
+- preprocessing_runs lưu từng lần xử lý và version/config; không thay đổi raw_content.
+- predictions tham chiếu report, preprocessing_run, model_version và category dự đoán; lỗi inference không làm rollback report.
+- prediction_reviews append-only; thao tác review tạo review record và cập nhật reports.final_category_id trong cùng transaction, không ghi đè predictions.
+- Mỗi hàng datasets là một version Dataset. Version đã FROZEN là bất biến.
+- dataset_samples liên kết Dataset version, category và provenance; category_id NULL chỉ khi labeling_status cho phép chưa gán nhãn.
+- training_runs tham chiếu Dataset version cụ thể; training_metrics lưu split, averaging và category khi là metric theo lớp.
+- Audit tổng quát nằm ở audit sink append-only ngoài 12 bảng. Không tự thêm bảng thứ 13; provider/retention production cần được chốt.
+
+Database Engine, kiểu dữ liệu SQL cụ thể, tập report status, auth cán bộ, storage và audit sink vẫn TBD; không coi gợi ý kỹ thuật trong Data Dictionary là quyết định stack đã duyệt.

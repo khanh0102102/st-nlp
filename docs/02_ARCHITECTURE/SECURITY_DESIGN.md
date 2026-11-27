@@ -158,3 +158,18 @@ Trước production phải có: contact/escalation, revoke token/secret, backup 
 - Upload limits, malware scanning.
 - Public/private map policy.
 - Secret manager, backup encryption và incident SLA.
+
+
+## 15. Phân quyền trong baseline 12 bảng
+
+users là bảng tài khoản dùng chung cho Citizen và cán bộ. role_codes lưu danh sách mã role allow-listed: CITIZEN, RECEIVER và ADMIN. Backend phải validate role_codes, tạo principal từ identity đã xác minh và áp dụng deny-by-default policy cho từng API/resource. Không nhận role hoặc owner_id do client tự khai báo.
+
+Baseline 12 bảng không có roles/permissions mapping table. Quyền nghiệp vụ AI/Data Manager được biểu diễn bằng permission policy tập trung và được cấp cho tài khoản được ủy quyền; không đồng nghĩa mọi ADMIN tự động được phép huấn luyện/kích hoạt model. Nếu cần role/permission động quản lý bằng giao diện/Database, phải đề xuất mở rộng schema trước khi triển khai.
+
+Citizen phải được scope theo users.id của principal hiện tại ở mọi truy vấn reports và report_attachments. RECEIVER/ADMIN chỉ truy cập chức năng theo permission; vai trò ADMIN không bỏ qua audit hoặc các quy tắc dữ liệu.
+
+## 16. Audit khi Database giới hạn 12 bảng
+
+Không có bảng audit_logs trong baseline. Các business audit event phải được gửi đến audit sink append-only bên ngoài 12 bảng, có actor, action, resource_type/id, timestamp, outcome, request_id và before/after tối thiểu. Sink production phải bền vững, có access control, retention, backup và biện pháp phát hiện sửa/xóa. Provider còn TBD; không được thay bằng debug log dễ mất hoặc log chứa secret/raw_content.
+
+prediction_reviews vẫn là lịch sử kiểm duyệt nghiệp vụ trong Database; không dùng nó để giả định đã bao phủ audit của login, quyền, status transitions, dataset freeze và model activation.

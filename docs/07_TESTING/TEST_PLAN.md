@@ -108,3 +108,20 @@ Mỗi test run cần ghi:
 ## 8. Automation
 
 Khi code được thêm, CI nên chạy format/lint/type check/unit/API tests; integration/E2E có thể chạy theo job riêng. Không giả định pipeline đã tồn tại trong repository hiện tại.
+
+
+## 9. Test bổ sung cho catalog và Database baseline
+
+- Seed catalog phải tạo đúng 11 category, đúng category_code/name/sort_order; chạy lại seed không tạo duplicate.
+- API và UI hiển thị đủ 11 category theo đúng thứ tự; Dashboard giữ nhóm count = 0.
+- API từ chối category_code không tồn tại; label mapping của model chỉ chấp nhận 11 mã hợp lệ.
+- OTHER không được dùng thay cho INSUFFICIENT_INFORMATION, INVALID_INPUT, UNLABELED, NEEDS_REVIEW hoặc INFERENCE_FAILED.
+- reports.raw_content không đổi qua preprocessing; reports.final_category_id NULL trước review và được cập nhật cùng transaction khi review thành công.
+- predictions phải tham chiếu cùng report với preprocessing_run; prediction failure không làm mất report.
+- prediction_reviews append-only; kiểm thử hai lần review, concurrency conflict và không ghi đè prediction.
+- Dataset version FROZEN không thể thay đổi; dataset_samples chỉ gán category hoặc labeling_status hợp lệ.
+- training_metrics kiểm thử metric tổng thể/per-class, split, averaging và category FK.
+- Kiểm tra migration tạo đúng 12 bảng; không tự sinh bảng roles/permissions/dataset_versions/audit_logs trong baseline.
+- Audit event được phát ra audit sink theo adapter contract; test retry/failure không làm mất thao tác nghiệp vụ đã commit.
+
+Test phải chạy trong Docker container theo Docker-only policy. Không ghi VERIFIED khi chưa có kết quả thực thi.

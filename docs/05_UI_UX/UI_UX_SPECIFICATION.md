@@ -177,3 +177,20 @@ Phải ghi rõ đây là kết quả máy đề xuất, không phải kết lu�
 - Status labels và timeline.
 - Bản đồ/provider.
 - Mobile breakpoint và accessibility target.
+
+
+## 10. Danh mục hiển thị và thao tác nhãn
+
+UI dùng catalog read-only từ API, hiển thị đúng 11 danh mục theo sort_order và tên ở [CLASSIFICATION_SPECIFICATION](../01_REQUIREMENTS/CLASSIFICATION_SPECIFICATION.md). Không tự hard-code các danh mục khác nhau ở từng màn hình.
+
+Citizen Portal: không yêu cầu người dân chọn danh mục khi gửi phản ánh trong baseline. Citizen nhập nội dung, chọn ảnh và vị trí; hệ thống tự chạy AI. Kết quả AI hiển thị rõ là gợi ý, không phải kết luận.
+
+Admin Portal: bộ lọc report, Dashboard, biểu đồ và màn hình review phải dùng chung catalog. Khi kiểm duyệt, cán bộ có thể xác nhận nhãn AI hoặc chọn một trong 11 danh mục. Hiển thị nhãn AI khác biệt với nhãn cuối cùng đã được cán bộ xác nhận.
+
+OTHER là nhãn hợp lệ cho phản ánh hợp lệ ngoài 10 nhóm. Không hiển thị/ghi các trạng thái thiếu thông tin, chưa gán nhãn hoặc lỗi inference như một category. Dashboard luôn hiển thị đủ 11 nhóm, cả khi số lượng bằng 0.
+
+## 11. UI theo Database baseline
+
+Chi tiết màn hình cần phân biệt report raw content, prediction history, review history và final category. Không cho chỉnh sửa trực tiếp raw_content hoặc prediction gốc từ control kiểm duyệt. Lịch sử review được hiển thị theo quyền; ghi chú nội bộ không được lộ trong Citizen Portal.
+
+Dataset UI hiển thị Dataset name + version label; version FROZEN là read-only. Sample có nhãn category hoặc labeling status riêng. Metrics UI cần chỉ rõ split, averaging và category nếu là metric theo lớp.

@@ -18,6 +18,7 @@
 
 - [BRD](01_REQUIREMENTS/BRD.md) — nhu cầu nghiệp vụ và giá trị kỳ vọng.
 - [SRS](01_REQUIREMENTS/SRS.md) — yêu cầu chức năng, phi chức năng và tiêu chí nghiệm thu.
+- [CLASSIFICATION_SPECIFICATION](01_REQUIREMENTS/CLASSIFICATION_SPECIFICATION.md) — nguồn chuẩn của 11 danh mục, mã và quy tắc gán nhãn.
 - [USE_CASE](01_REQUIREMENTS/USE_CASE.md) — tác nhân và đặc tả ca sử dụng.
 - [BUSINESS_PROCESS](01_REQUIREMENTS/BUSINESS_PROCESS.md) — quy trình nghiệp vụ đầu-cuối.
 
@@ -33,6 +34,8 @@
 - [DATABASE_DESIGN](03_DATABASE/DATABASE_DESIGN.md) — nguyên tắc, miền dữ liệu và ràng buộc.
 - [ERD](03_DATABASE/ERD.md) — mô hình quan hệ khái niệm.
 - [DATA_DICTIONARY](03_DATABASE/DATA_DICTIONARY.md) — từ điển dữ liệu và quy tắc mô tả cột.
+
+**Database baseline:** đúng 12 bảng theo đề xuất của chủ dự án; xem DATABASE_DESIGN, ERD và DATA_DICTIONARY. Đây là thiết kế đề xuất, chưa phải migration đã chạy.
 
 ## 04 — API
 

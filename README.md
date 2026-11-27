@@ -53,6 +53,17 @@ Xem [Mục lục tài liệu](docs/README.md). Tài liệu được viết bằn
 - Tài liệu nền tảng: bản nháp khởi tạo, cần được chủ dự án rà soát/phê duyệt.
 - Mã nguồn: chưa được đưa vào repository.
 - Technology stack chi tiết: một số lựa chọn còn TBD.
-- Database/API/11 nhãn phân loại: cần chốt đặc tả chi tiết trước khi coi là hợp đồng triển khai.
+- Danh mục 11 nhóm đã có Classification Specification; mã kỹ thuật được chuẩn hóa tại tài liệu này.
+- Database Design, ERD và Data Dictionary đã mô tả baseline 12 bảng đề xuất; Database Engine, kiểu vật lý cụ thể và migration vẫn chờ chốt/triển khai.
+- Repository vẫn chưa có backend/frontend/migration thực thi; tài liệu không phải bằng chứng hệ thống đã chạy.
 
 Không chạy lệnh triển khai ứng dụng cho đến khi các service và dependency được khai báo trong cấu hình tương ứng.
+
+
+## Danh mục phân loại và Database baseline
+
+ST-NLP sử dụng chính xác 11 danh mục theo thứ tự chủ dự án cung cấp. Nguồn chuẩn: [Classification Specification](docs/01_REQUIREMENTS/CLASSIFICATION_SPECIFICATION.md).
+
+Thiết kế Database baseline gồm đúng 12 bảng: users, incident_categories, reports, report_attachments, preprocessing_runs, model_versions, predictions, prediction_reviews, datasets, dataset_samples, training_runs và training_metrics. Chi tiết nằm trong [Database Design](docs/03_DATABASE/DATABASE_DESIGN.md), [ERD](docs/03_DATABASE/ERD.md) và [Data Dictionary](docs/03_DATABASE/DATA_DICTIONARY.md).
+
+Các tài liệu này đang mô tả thiết kế đề xuất; chưa có SQLAlchemy models, migrations hay Database service được triển khai. DB engine và một số policy vận hành vẫn TBD.
