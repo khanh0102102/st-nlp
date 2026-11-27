@@ -7,7 +7,25 @@
 
 ## 1. Nguyên tắc lựa chọn
 
-Chọn công nghệ dựa trên yêu cầu, khả năng triển khai, kinh nghiệm đội ngũ, độ ổn định và mức độ bảo trì. Không thêm framework/library chỉ vì phổ biến. Phiên bản phải được pin trong dependency lock/config khi bắt đầu triển khai.
+Chọn công nghệ dựa trên yêu cầu, khả năng triển khai, độ ổn định và mức độ bảo trì. Không thêm framework/library chỉ vì phổ biến. Phiên bản phải được pin trong dependency lock/config khi bắt đầu triển khai.
+
+## 1.1. Quyết định vận hành: Docker-only trên máy cá nhân
+
+**Yêu cầu đã thống nhất với chủ dự án:** ST-NLP phải được phát triển và chạy theo mô hình Docker-first/Docker-only. Người dùng không phải cài runtime hoặc thư viện của dự án trực tiếp trên máy cá nhân.
+
+Máy host chỉ cần:
+- Git.
+- Docker Desktop trên Windows/macOS hoặc Docker Engine trên Linux.
+- Docker Compose plugin.
+- Trình duyệt; IDE/editor là tùy chọn.
+
+Không yêu cầu cài Python, Node.js, npm/pnpm/yarn, database server/client, Redis, thư viện NLP/ML hoặc package manager dự án trên host.
+
+Toàn bộ runtime, dependency và service phải được đóng gói/chạy trong container. Dockerfile cài dependency dựa trên manifest/lockfile; Docker Compose điều phối các service. Các lệnh lint, test, migration, seed, training và quản trị phải chạy qua `docker compose run/exec`.
+
+**Trải nghiệm cuối cùng mong muốn:** sau khi clone repository, người dùng chạy `docker compose up --build -d` để build và khởi động hệ thống. Điều này là tiêu chí thiết kế và nghiệm thu, chưa phải trạng thái hiện tại vì Compose đang là placeholder.
+
+Các credential của dịch vụ bên ngoài như Google OAuth hoặc map provider không phải thư viện cần cài trên host; nếu chức năng yêu cầu, chúng được cấu hình an toàn qua .env/secret và không commit vào Git.
 
 ## 2. Những định hướng đã xuất hiện trong quá trình phát triển
 
@@ -54,13 +72,13 @@ Thư viện và phiên bản chỉ được chốt sau khi có thử nghiệm t�
 
 ## 5. Môi trường
 
-Nên tách:
-- local development.
-- automated test/CI.
-- staging.
-- production.
+Tất cả môi trường phải ưu tiên container hóa:
+- local development: Docker Compose.
+- automated test/CI: Docker image/container; không cài dependency dự án trực tiếp trên runner host ngoài Docker engine.
+- staging: container image đã build và kiểm tra.
+- production: container image có version/tag bất biến, secret và dữ liệu tách biệt.
 
-Mỗi môi trường dùng cấu hình và secret riêng. Không copy database production xuống local nếu chưa ẩn danh/được phép.
+Mỗi môi trường dùng cấu hình và secret riêng. Không copy database production xuống local nếu chưa ẩn danh/được phép. Không tạo hướng dẫn yêu cầu cài runtime/library dự án trên host.
 
 ## 6. Nguyên tắc dependency
 
@@ -70,6 +88,15 @@ Mỗi môi trường dùng cấu hình và secret riêng. Không copy database p
 - Tránh phụ thuộc vào API deprecated.
 - Có quy trình nâng phiên bản và chạy regression tests.
 - Ghi lý do khi thêm dependency lớn.
+
+## 6.1. Quy tắc đóng gói dependency
+
+- Backend: Dockerfile cài Python runtime và package từ requirements/pyproject lock trong image.
+- Frontend: Dockerfile cài Node runtime và package từ lockfile trong image.
+- Database/cache/queue/storage: dùng container image chính thức/phù hợp, pin tag phiên bản; không cài service lên host.
+- NLP/ML: dependency và model runtime nằm trong image/worker image; artifact lớn lưu trong volume hoặc artifact storage, không commit Git.
+- Tối ưu multi-stage build và layer cache nhưng không hy sinh khả năng tái lập.
+- Dùng .dockerignore và không đưa .env, .venv, node_modules hoặc dataset riêng tư vào build context.
 
 ## 7. Cổng phê duyệt stack
 
