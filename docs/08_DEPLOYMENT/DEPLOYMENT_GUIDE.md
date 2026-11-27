@@ -4,11 +4,15 @@
 |---|---|
 | Phiên bản | 1.0 |
 | Trạng thái | Template — chờ stack và service được chốt |
-| Orchestration định hướng | Docker Compose cho local development |
+| Orchestration | Docker Compose — bắt buộc cho local development và là baseline container deployment |
 
 ## 1. Phạm vi
 
-Tài liệu là khung vận hành cho local, test, staging và production. Repository hiện mới có cấu hình compose placeholder; chưa có frontend/backend service hoặc Dockerfile, vì vậy chưa thể chạy ứng dụng ST-NLP từ repository này.
+Tài liệu là khung vận hành cho local, test, staging và production.
+
+**Yêu cầu của chủ dự án:** máy cá nhân không cài runtime hoặc dependency riêng của ST-NLP. Toàn bộ Frontend, Backend, Database, Worker, NLP/ML và công cụ kiểm thử phải được chạy trong Docker container.
+
+**Trạng thái repository hiện tại:** docker-compose.yml mới là placeholder với services rỗng; chưa có Dockerfile hoặc service thực tế. Vì vậy lệnh khởi chạy mục tiêu bên dưới chưa chạy được cho đến khi AI triển khai đầy đủ Dockerfiles, Compose services, cấu hình và healthchecks.
 
 ## 2. Môi trường
 
@@ -21,16 +25,18 @@ Không dùng cùng secret/database giữa các môi trường.
 
 ## 3. Prerequisites
 
-Cần cài sau khi stack được chốt:
-- Git.
-- Docker Engine/Desktop và Docker Compose plugin.
-- Runtime/package manager của Frontend/Backend.
-- Database client/CLI tương ứng.
-- Google OAuth test client.
-- Map provider key nếu dùng.
-- Quyền truy cập storage/registry theo môi trường.
+### Công cụ duy nhất cần có trên máy host
 
-Phiên bản cụ thể phải được ghi trong Technology Stack và lockfile.
+- Git để clone repository.
+- Docker Desktop (Windows/macOS) hoặc Docker Engine + Docker Compose plugin (Linux).
+- Trình duyệt web.
+- IDE/editor là tùy chọn.
+
+**Không cài trên host:** Python, Node.js, npm/pnpm/yarn, PostgreSQL/MySQL, Redis, thư viện NLP/ML, compiler hoặc package manager của dự án.
+
+Docker Desktop/Engine là yêu cầu hệ thống; Docker sẽ tải base images và build dependency vào image/container. Điều đó không đồng nghĩa với việc cài thư viện dự án vào Windows/macOS/Linux host.
+
+Credential của Google OAuth hoặc map provider, nếu cần cho chức năng tích hợp thật, phải được cung cấp riêng qua .env/secret. Credential không phải thư viện và không được commit.
 
 ## 4. Clone repository
 
@@ -41,7 +47,9 @@ Phiên bản cụ thể phải được ghi trong Technology Stack và lockfile.
 
 ## 5. Environment configuration
 
-Tạo .env từ .env.example khi file mẫu được bổ sung. Không commit .env thật.
+Khi .env.example được bổ sung, copy thành .env nếu môi trường cần cấu hình riêng. Giá trị local mặc định nên được thiết kế để các container cơ bản có thể khởi động mà không cần secret bên ngoài. Không commit .env thật.
+
+Google OAuth thật và một số map provider có thể cần credential. Khi thiếu credential, ứng dụng phải báo cấu hình chưa đầy đủ hoặc cung cấp chế độ local development được cô lập rõ ràng; tuyệt đối không vô hiệu hóa bảo mật trong staging/production.
 
 Nhóm biến dự kiến:
 - APP_ENV, APP_SECRET_KEY, APP_BASE_URL.
@@ -65,28 +73,56 @@ File docker-compose.yml hiện chỉ là placeholder tên dự án và services 
 - cache/queue nếu cần.
 - local object storage nếu cần.
 
-Lệnh kiểm tra sau khi compose được hoàn thiện:
-    docker compose config
+### Khởi động mục tiêu sau khi clone
 
-Khởi động:
+    git clone https://github.com/khanh0102102/st-nlp.git
+    cd st-nlp
     docker compose up --build -d
 
+Mục tiêu nghiệm thu là lệnh cuối cùng tự build image, khởi động các service, chờ Database healthy, chạy migration/seed an toàn và đưa ứng dụng lên trạng thái sẵn sàng. Người dùng không phải chạy pip install, npm install hoặc cài database trên host.
+
+### Lệnh quản trị
+
+Kiểm tra cấu hình:
+
+    docker compose config
+
+Xem trạng thái:
+
+    docker compose ps
+
 Xem log:
+
     docker compose logs -f
 
-Dừng:
+Dừng service nhưng giữ dữ liệu named volume:
+
     docker compose down
 
-Không chạy các lệnh trên với kỳ vọng có ứng dụng hoạt động khi chưa khai báo service. Không dùng down -v trên môi trường có dữ liệu cần giữ.
+Chạy test trong container (thay <service> và <test-command> theo Compose thực tế):
+
+    docker compose run --rm <service> <test-command>
+
+Chạy lệnh trong container đang chạy:
+
+    docker compose exec <service> <command>
+
+**Cảnh báo:** `docker compose down -v` xóa named volumes và có thể xóa Database/dữ liệu; chỉ dùng khi chủ động reset dữ liệu local.
+
+Không tuyên bố lệnh one-command hoạt động cho đến khi đã build/test trên môi trường sạch.
 
 ## 7. Database migration
 
-Khi công cụ migration được chốt:
-1. Kiểm tra DATABASE_URL và target environment.
+Migration tool và migration command phải chạy bên trong container; không yêu cầu người dùng cài DB client hoặc migration CLI trên host.
+
+Local Compose nên có quy trình migration tự động an toàn (ví dụ one-shot migration service phụ thuộc Database healthcheck, Backend chờ migration hoàn tất). Seed phải idempotent. Không chạy migration đồng thời ở nhiều replica.
+
+Với staging/production:
+1. Kiểm tra DATABASE_URL và target environment qua secret/config.
 2. Backup trước migration rủi ro.
-3. Chạy migration upgrade.
+3. Chạy migration bằng release/migration container.
 4. Kiểm tra schema/version.
-5. Chạy smoke test và API test.
+5. Chạy smoke test.
 6. Ghi migration version vào release record.
 
 Không chỉnh schema production thủ công.
