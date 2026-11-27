@@ -8,8 +8,8 @@ def test_dataset_api_uses_shared_preprocessing_fingerprint() -> None:
     raw_text = "  ĐƯỜNG   giao thông KHÔNG sáng tại số 12. "
     equivalent = unicodedata.normalize(
         "NFD",
-        "đường giao thông không\ngiao thông không sáng tại số 12.",
-    ).replace("giao thông không giao thông", "giao thông")
+        "đường\n giao   thông không sáng tại số 12.",
+    )
 
     assert _fingerprint(raw_text) == text_fingerprint(raw_text)
     assert _fingerprint(raw_text) == _fingerprint(equivalent)
