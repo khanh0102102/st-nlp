@@ -152,6 +152,17 @@ SRS mô tả hành vi mà ST-NLP phải cung cấp cho người dân, cán bộ,
 | FR-AUD-02 | Audit ghi actor, action, resource, timestamp và kết quả; tránh lưu secret/dữ liệu nhạy cảm không cần thiết | Must |
 | FR-AUD-03 | Quyền xem audit phải được giới hạn | Must |
 
+## 6.10. Danh mục phân loại
+
+| ID | Yêu cầu | Ưu tiên |
+|---|---|---|
+| FR-CAT-01 | Hệ thống phải duy trì chính xác 11 danh mục theo CLASSIFICATION_SPECIFICATION, có category_code ổn định và thứ tự hiển thị 1–11 | Must |
+| FR-CAT-02 | API, Database, Dashboard, Dataset và NLP/ML phải dùng chung category_code/label_schema_version; không dùng tên hiển thị làm khóa | Must |
+| FR-CAT-03 | Citizen không bắt buộc chọn danh mục khi tạo phản ánh; hệ thống thực hiện phân loại văn bản bằng AI | Must |
+| FR-CAT-04 | Prediction thành công phải trả một category thuộc catalog; input không hợp lệ, thiếu thông tin và inference failure phải có trạng thái riêng, không tự động gán OTHER | Must |
+| FR-CAT-05 | Cán bộ có quyền được xác nhận nhãn AI hoặc chọn một trong 11 danh mục; mọi lần review được lưu lịch sử và không ghi đè prediction | Must |
+| FR-CAT-06 | Dashboard phải thống kê và hiển thị đủ 11 danh mục, kể cả danh mục có số lượng bằng 0 | Must |
+
 ## 7. Yêu cầu phi chức năng
 
 | ID | Nhóm | Yêu cầu |
