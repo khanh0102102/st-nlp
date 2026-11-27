@@ -156,3 +156,16 @@ Không tự động retrain/promote chỉ dựa vào drift alert.
 - Model artifact không tương thích preprocessing.
 
 Báo cáo phải trình bày hạn chế và trường hợp model không nên được tin cậy.
+
+
+## 13. Label schema và Database mapping
+
+Mô hình phải phân loại vào chính xác 11 category_code trong [CLASSIFICATION_SPECIFICATION](../01_REQUIREMENTS/CLASSIFICATION_SPECIFICATION.md). Label encoder/decoder phải lưu label_schema_version và mapping đầy đủ; không phụ thuộc thứ tự ngẫu nhiên của database query hoặc tên hiển thị.
+
+Mỗi model_versions record phải lưu model_family, algorithm_name, version_label, text_representation, preprocessing_version, label_schema_version, source training_run_id, artifact_uri/checksum, hyperparameters và metrics summary. Một prediction phải tham chiếu report_id, preprocessing_run_id, model_version_id và predicted_category_id. Prediction failed/insufficient-information không được gán OTHER mặc định.
+
+Training_metrics phải lưu metric_name/value, data_split, averaging và category_id cho kết quả theo lớp; tối thiểu báo cáo Accuracy, Precision, Recall, Macro F1 và Weighted F1. Không tạo metric giả hoặc điền metrics nếu không có evaluation output thật. Dataset/model của các lần chạy phải dùng cùng label schema để so sánh công bằng.
+
+## 14. Ý nghĩa class OTHER
+
+OTHER là class thứ 11 trong tập supervised classification, không phải catch-all cho lỗi input. Input rỗng/không hợp lệ, văn bản thiếu thông tin và inference error phải được biểu diễn bằng status riêng; prediction category có thể NULL khi inference không thành công hoặc không thể xác định.
