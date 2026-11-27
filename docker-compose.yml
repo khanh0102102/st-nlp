@@ -1,5 +1,88 @@
-# ST-NLP Compose scaffold.
-# This file is intentionally non-operational until the technology stack and
-# concrete frontend/backend/database/worker services are approved.
 name: st-nlp
-services: {}
+
+services:
+  db:
+    image: postgres:18.7-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-stnlp}
+      POSTGRES_USER: ${POSTGRES_USER:-stnlp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-stnlp_local_only_change_me}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: runtime
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      SECRET_KEY: ${SECRET_KEY:-local-only-change-before-any-shared-environment}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-stnlp}:${POSTGRES_PASSWORD:-stnlp_local_only_change_me}@db:5432/${POSTGRES_DB:-stnlp}
+      CORS_ORIGINS_CSV: ${CORS_ORIGINS:-http://localhost:8080}
+      UPLOADS_DIR: ${UPLOADS_DIR:-/data/uploads}
+      MODEL_ARTIFACTS_DIR: ${MODEL_ARTIFACTS_DIR:-/data/model-artifacts}
+      AUDIT_LOG_PATH: ${AUDIT_LOG_PATH:-/data/audit/audit-events.jsonl}
+    volumes:
+      - uploads_data:/data/uploads
+      - model_artifacts_data:/data/model-artifacts
+      - audit_data:/data/audit
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=3)"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+
+  api-test:
+    profiles: ["test"]
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: test
+    environment:
+      APP_ENV: test
+      SECRET_KEY: test-only-not-a-real-secret
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-stnlp}:${POSTGRES_PASSWORD:-stnlp_local_only_change_me}@db:5432/${POSTGRES_DB:-stnlp}
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["pytest", "-q", "-p", "no:cacheprovider"]
+
+  web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  uploads_data:
+  model_artifacts_data:
+  audit_data:

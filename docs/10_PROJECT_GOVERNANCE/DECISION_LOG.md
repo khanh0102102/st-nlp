@@ -2,54 +2,61 @@
 
 | Thuộc tính | Giá trị |
 |---|---|
-| Phiên bản | 0.1 |
+| Phiên bản | 0.2 |
 | Cập nhật | 2026-11-27 |
-| Mục đích | Ghi lại quyết định đã được chủ dự án cung cấp/chấp thuận và các mục còn mở |
+| Mục đích | Ghi nhận baseline, lựa chọn được ủy quyền và các mục còn mở |
 
-## 1. Quyết định/baseline đã được xác lập
+## 1. Baseline đã được xác lập
 
 | ID | Chủ đề | Quyết định/baseline | Nguồn | Trạng thái |
 |---|---|---|---|---|
-| DEC-001 | Local development | Docker-only; host chỉ cần Git, Docker/Compose và trình duyệt; runtime/dependency chạy trong container | AGENTS.md, TECHNOLOGY_STACK.md, Master Instruction | ACCEPTED |
-| DEC-002 | Category catalog | Chính xác 11 danh mục và category_code theo CLASSIFICATION_SPECIFICATION.md | Chủ dự án cung cấp danh sách 11 nhóm và chấp nhận mapping code trong Master Instruction | BASELINE ACCEPTED |
-| DEC-003 | Database table set | Baseline gồm đúng 12 bảng trong DATABASE_DESIGN.md; không tự thêm roles/permissions/dataset_versions/audit_logs | Chủ dự án cung cấp 12 bảng và Master Instruction | BASELINE ACCEPTED |
-| DEC-004 | Prediction vs review | Prediction AI được lưu riêng; prediction_reviews là lịch sử kiểm duyệt; reports.final_category_id là nhãn cuối cùng do cán bộ xác nhận | SRS, DATABASE_DESIGN, Master Instruction | BASELINE ACCEPTED |
-| DEC-005 | Dataset version | Mỗi hàng datasets đại diện một version; version FROZEN bất biến | DATABASE_DESIGN, Master Instruction | BASELINE ACCEPTED |
-| DEC-006 | AI scope | Text classification; ảnh là minh chứng trong baseline, không tự thêm Computer Vision | PROJECT_SCOPE, PROJECT_OVERVIEW | ACCEPTED |
+| DEC-001 | Local development | Docker-only; host chỉ cần Git, Docker/Compose và trình duyệt | AGENTS.md, Master Prompt | ACCEPTED |
+| DEC-002 | Category catalog | Chính xác 11 danh mục và category_code theo CLASSIFICATION_SPECIFICATION.md | Chủ dự án | BASELINE ACCEPTED |
+| DEC-003 | Database table set | Đúng 12 bảng; không tự thêm roles/permissions/dataset_versions/audit_logs | Chủ dự án | BASELINE ACCEPTED |
+| DEC-004 | Prediction vs review | AI prediction lưu riêng; prediction_reviews append-only; reports.final_category_id là nhãn cuối cùng | SRS/Database design | BASELINE ACCEPTED |
+| DEC-005 | Dataset version | Mỗi hàng datasets đại diện một version; FROZEN bất biến | Database design | BASELINE ACCEPTED |
+| DEC-006 | AI scope | Text classification; ảnh chỉ là minh chứng trong baseline, không tự thêm Computer Vision | Project scope | ACCEPTED |
 
-**Phạm vi của trạng thái ACCEPTED:** xác nhận baseline nghiệp vụ/giới hạn nêu trên, không đồng nghĩa physical SQL implementation hoặc mọi cột kỹ thuật đã được nghiệm thu.
+## 2. Quyết định triển khai được ủy quyền qua Master Prompt
 
-## 2. Quyết định thiết kế đang là Proposed/đánh đổi cần review
+Các lựa chọn dưới đây được chốt để bắt đầu local implementation theo quyền chủ dự án giao cho Agent trong Master Prompt. Chúng không tự động phê duyệt chi phí, dữ liệu thật, credentials hoặc deployment production.
 
-| ID | Chủ đề | Nội dung đang mô tả | Cần review |
-|---|---|---|---|
-| PROP-001 | users.role_codes | Lưu role codes dạng JSON trong users để giữ giới hạn 12 bảng | Kiểm tra validation allow-list, truy vấn permission, cấp/thu hồi quyền và audit; không tự thêm RBAC tables |
-| PROP-002 | Dataset versioning | Mỗi row datasets là một version, parent_dataset_id lưu lineage | Kiểm tra copy samples/versioning và freeze enforcement |
-| PROP-003 | Audit sink | Audit tổng quát ngoài 12 bảng qua sink append-only | Chọn nơi lưu bền vững, delivery/retry, access, retention và tamper detection |
-| PROP-004 | Confidence | predictions lưu confidence_value + confidence_type | Chọn semantics/calibration và chính sách hiển thị trước khi dùng threshold |
+| ID | Chủ đề | Quyết định | ADR | Trạng thái |
+|---|---|---|---|---|
+| DEC-007 | Frontend | React 19.3.1, TypeScript 5.9.3, Vite 8.4.0, Node 26, npm | ADR-0002 | ACCEPTED FOR INITIAL IMPLEMENTATION |
+| DEC-008 | Backend/ORM | Python 3.14.10, FastAPI 0.165.0, SQLAlchemy 2.1.9, Alembic 1.20.1, Pydantic 2.14.4, psycopg 3.3.9 | ADR-0002 | ACCEPTED FOR INITIAL IMPLEMENTATION |
+| DEC-009 | Database | PostgreSQL 18.7; đúng 12 bảng và UUID/JSONB/timezone-aware types | ADR-0002 | ACCEPTED FOR INITIAL IMPLEMENTATION |
+| DEC-010 | Architecture | Modular monolith, one API + one React SPA, two separated portal route trees; add worker/queue only when needed | ADR-0002 | ACCEPTED FOR INITIAL IMPLEMENTATION |
+| DEC-011 | Staff auth/local workflow | Staff provisioned locally, Argon2id password hash; six-status report workflow and controlled transitions | ADR-0003 | ACCEPTED FOR LOCAL IMPLEMENTATION |
+| DEC-012 | Upload/location | Private named volume; JPEG/PNG/WebP; max 5 files/report, 10 MiB/file; WGS84/EPSG:4326; Leaflet/OSM for local demo | ADR-0003 | ACCEPTED FOR LOCAL IMPLEMENTATION |
+| DEC-013 | Confidence/audit | Preserve confidence_type, no uncalibrated percentages/threshold auto-approval; local JSONL audit sink | ADR-0004 | ACCEPTED FOR INITIAL IMPLEMENTATION |
 
-## 3. Các quyết định còn mở (TBD)
+## 3. Trade-offs and implementation controls
 
-| ID | Chủ đề | Nội dung cần quyết định | Ảnh hưởng |
-|---|---|---|---|
-| TBD-001 | Frontend stack | Framework, language, package manager, build/runtime version | Frontend, Docker, CI |
-| TBD-002 | Backend stack | Framework Python, Python runtime/version, ASGI server, dependency manager | API, Docker, ML |
-| TBD-003 | Database | DB engine/version, UUID type, JSON/geospatial support, SQL type mapping | Models, migrations, indexes |
-| TBD-004 | Migration | Alembic hay công cụ khác; strategy upgrade/downgrade | Database Foundation |
-| TBD-005 | Staff authentication | Provisioning, login method, MFA, password/reset/disable | Admin Portal, Authorization |
-| TBD-006 | Permission policy | Role/permission matrix cho RECEIVER, ADMIN và AI/Data Manager | Security, AI Management |
-| TBD-007 | Report workflow | Status codes, state transitions, actors and visibility | Incident, Admin, Citizen |
-| TBD-008 | File storage | Local/dev and production provider, bucket/private access, file limits, scan, retention | Attachment, Docker, Backup |
-| TBD-009 | Map/location | Provider, CRS/SRID, geocoding, quotas, privacy and address policy | Citizen, Admin, Dashboard |
-| TBD-010 | Dataset | Dataset source, file format, license/consent, PII handling, labeling guideline, split ratio | Training, evaluation |
-| TBD-011 | AI confidence | Raw score/probability/calibrated probability, review threshold and no-prediction states | Prediction, Citizen/Admin UI |
-| TBD-012 | Audit | Production sink, access/read API, retention, backup, delivery guarantee | Security, Compliance |
-| TBD-013 | Non-functional targets | Latency, load, availability, RPO/RTO, retention period | QA and Deployment |
-| TBD-014 | Production hosting | Hosting platform, domain, TLS, secret manager, CI/CD, monitoring | Deployment |
+| ID | Chủ đề | Quy tắc |
+|---|---|---|
+| PROP-001 | users.role_codes | JSON allow-list; policy tập trung; không thêm RBAC tables |
+| PROP-002 | Dataset versioning | Each datasets row is one version; frozen version immutable |
+| PROP-003 | Audit sink | Local JSONL is development-only; production append-only sink still open |
+| PROP-004 | Confidence | Raw score/probability/calibration must retain distinct types |
 
-## 4. Quy tắc quản lý quyết định
+## 4. Quyết định vẫn mở cho production hoặc dữ liệu thật
 
-- Không thay đổi trạng thái TBD/Proposed thành Accepted nếu không có quyết định từ chủ dự án.
-- Mỗi quyết định mới phải ghi người quyết định, ngày, bối cảnh, lựa chọn, hệ quả và tài liệu/code bị ảnh hưởng.
-- Khi quyết định làm thay đổi API/Database/security, cập nhật tài liệu liên quan và RTM cùng Pull Request.
-- Không coi việc một phương án xuất hiện trong bảng “đề xuất” là bằng chứng chủ dự án đã duyệt.
+| ID | Nội dung còn mở | Khi nào phải chốt |
+|---|---|---|
+| TBD-010 | Dataset source, license/consent, PII, labeling adjudication and split policy | Before importing or training on real data |
+| TBD-012 | Production audit sink, durability, retention, backup and tamper-evidence | Before production |
+| TBD-013 | Quantified NFR, latency/load, availability, RPO/RTO and retention | Before QA release gate |
+| TBD-014 | Production hosting, domain, TLS, secret manager, CI/CD and monitoring | Before production deployment |
+| TBD-015 | Google OAuth client credentials, consent screen, approved redirect URIs and allowed origins | Before real Google sign-in test |
+| TBD-016 | Production object storage, malware scan and deletion/retention policy | Before accepting real user uploads |
+| TBD-017 | Production map/geocoding provider, terms, quota and location privacy | Before public map deployment |
+| TBD-018 | Staff MFA and production identity/provisioning policy | Before staff access in production |
+| TBD-019 | Dataset-driven calibration and confidence threshold/acceptance target | Before automation can reduce human review |
+
+## 5. Quy tắc quản lý quyết định
+
+- Các DEC-007..013 được đánh dấu ACCEPTED FOR INITIAL/LOCAL IMPLEMENTATION theo quyền triển khai được chủ dự án giao trong Master Prompt; không diễn giải thành production approval.
+- Các TBD ở mục 4 không được tự động chốt bằng cách đặt giá trị mặc định rồi dùng trên production.
+- Mỗi quyết định ảnh hưởng Database/API/security phải cập nhật ADR, docs chuyên ngành và RTM trong cùng PR.
+- Không đánh dấu chức năng/test là hoàn thành nếu chưa có source và evidence.

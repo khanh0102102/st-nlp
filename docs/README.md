@@ -2,88 +2,79 @@
 
 **Dự án:** Smart Traffic & Urban Incident Classifier  
 **Ngôn ngữ:** Tiếng Việt  
-**Trạng thái bộ tài liệu:** Bản khởi tạo – cần rà soát và phê duyệt theo từng tài liệu.
-
-## Cách đọc
-
-Đọc theo thứ tự từ tổng quan đến chi tiết. Tài liệu đánh dấu **TBD** hoặc **Proposed** là nội dung cần xác minh/chốt, không phải quyết định đã duyệt.
+**Trạng thái:** Tài liệu yêu cầu và governance được quản lý theo trạng thái trong từng file.
 
 ## 00 — Tổng quan dự án
 
-- [PROJECT_OVERVIEW](00_OVERVIEW/PROJECT_OVERVIEW.md) — mục tiêu, đối tượng, phân hệ và kết quả dự kiến.
-- [PROJECT_SCOPE](00_OVERVIEW/PROJECT_SCOPE.md) — phạm vi trong/ngoài dự án, ràng buộc và tiêu chí thành công.
-- [PROJECT_ROADMAP](00_OVERVIEW/PROJECT_ROADMAP.md) — các giai đoạn và cổng nghiệm thu.
+- [PROJECT_OVERVIEW](00_OVERVIEW/PROJECT_OVERVIEW.md)
+- [PROJECT_SCOPE](00_OVERVIEW/PROJECT_SCOPE.md)
+- [PROJECT_ROADMAP](00_OVERVIEW/PROJECT_ROADMAP.md)
 
 ## 01 — Yêu cầu
 
-- [BRD](01_REQUIREMENTS/BRD.md) — nhu cầu nghiệp vụ và giá trị kỳ vọng.
-- [SRS](01_REQUIREMENTS/SRS.md) — yêu cầu chức năng, phi chức năng và tiêu chí nghiệm thu.
-- [CLASSIFICATION_SPECIFICATION](01_REQUIREMENTS/CLASSIFICATION_SPECIFICATION.md) — nguồn chuẩn của 11 danh mục, mã và quy tắc gán nhãn.
-- [USE_CASE](01_REQUIREMENTS/USE_CASE.md) — tác nhân và đặc tả ca sử dụng.
-- [BUSINESS_PROCESS](01_REQUIREMENTS/BUSINESS_PROCESS.md) — quy trình nghiệp vụ đầu-cuối.
+- [BRD](01_REQUIREMENTS/BRD.md)
+- [SRS](01_REQUIREMENTS/SRS.md)
+- [CLASSIFICATION_SPECIFICATION](01_REQUIREMENTS/CLASSIFICATION_SPECIFICATION.md) — nguồn chuẩn của 11 danh mục.
+- [USE_CASE](01_REQUIREMENTS/USE_CASE.md)
+- [BUSINESS_PROCESS](01_REQUIREMENTS/BUSINESS_PROCESS.md)
 
 ## 02 — Kiến trúc
 
-- [SYSTEM_ARCHITECTURE](02_ARCHITECTURE/SYSTEM_ARCHITECTURE.md) — kiến trúc tổng thể và nguyên tắc phân lớp.
-- [SYSTEM_DESIGN](02_ARCHITECTURE/SYSTEM_DESIGN.md) — thiết kế thành phần và luồng tương tác.
-- [MODULE_DESIGN](02_ARCHITECTURE/MODULE_DESIGN.md) — trách nhiệm, đầu vào/đầu ra và phụ thuộc của module.
-- [SECURITY_DESIGN](02_ARCHITECTURE/SECURITY_DESIGN.md) — xác thực, phân quyền, bảo vệ dữ liệu và audit.
+- [SYSTEM_ARCHITECTURE](02_ARCHITECTURE/SYSTEM_ARCHITECTURE.md)
+- [SYSTEM_DESIGN](02_ARCHITECTURE/SYSTEM_DESIGN.md)
+- [MODULE_DESIGN](02_ARCHITECTURE/MODULE_DESIGN.md)
+- [SECURITY_DESIGN](02_ARCHITECTURE/SECURITY_DESIGN.md)
 
 ## 03 — Cơ sở dữ liệu
 
-- [DATABASE_DESIGN](03_DATABASE/DATABASE_DESIGN.md) — nguyên tắc, miền dữ liệu và ràng buộc.
-- [ERD](03_DATABASE/ERD.md) — mô hình quan hệ khái niệm.
-- [DATA_DICTIONARY](03_DATABASE/DATA_DICTIONARY.md) — từ điển dữ liệu và quy tắc mô tả cột.
+- [DATABASE_DESIGN](03_DATABASE/DATABASE_DESIGN.md)
+- [ERD](03_DATABASE/ERD.md)
+- [DATA_DICTIONARY](03_DATABASE/DATA_DICTIONARY.md)
 
-**Database baseline:** đúng 12 bảng theo đề xuất của chủ dự án; xem DATABASE_DESIGN, ERD và DATA_DICTIONARY. Đây là thiết kế đề xuất, chưa phải migration đã chạy.
+Baseline database: đúng 12 bảng; đây là thiết kế, chỉ được coi là schema triển khai sau khi migration/models/seed đã được kiểm thử.
 
 ## 04 — API
 
-- [API_SPECIFICATION](04_API/API_SPECIFICATION.md) — quy ước và danh mục endpoint dự kiến.
+- [API_SPECIFICATION](04_API/API_SPECIFICATION.md)
 
 ## 05 — UI/UX
 
-- [UI_UX_SPECIFICATION](05_UI_UX/UI_UX_SPECIFICATION.md) — sitemap, màn hình, trạng thái và hành vi giao diện.
+- [UI_UX_SPECIFICATION](05_UI_UX/UI_UX_SPECIFICATION.md)
 
 ## 06 — Phát triển
 
-- [TECHNOLOGY_STACK](06_DEVELOPMENT/TECHNOLOGY_STACK.md) — công nghệ đã biết, đề xuất và điểm còn TBD.
-- [FOLDER_STRUCTURE](06_DEVELOPMENT/FOLDER_STRUCTURE.md) — cấu trúc mã nguồn mục tiêu.
-- [CODING_STANDARDS](06_DEVELOPMENT/CODING_STANDARDS.md) — quy tắc code và review.
-- [GIT_WORKFLOW](06_DEVELOPMENT/GIT_WORKFLOW.md) — branch, commit, PR và release.
+- [TECHNOLOGY_STACK](06_DEVELOPMENT/TECHNOLOGY_STACK.md)
+- [FOLDER_STRUCTURE](06_DEVELOPMENT/FOLDER_STRUCTURE.md)
+- [CODING_STANDARDS](06_DEVELOPMENT/CODING_STANDARDS.md)
+- [GIT_WORKFLOW](06_DEVELOPMENT/GIT_WORKFLOW.md)
 
 ## 07 — Kiểm thử
 
-- [TEST_PLAN](07_TESTING/TEST_PLAN.md) — chiến lược, cấp độ và cổng kiểm thử.
-- [TEST_CASES](07_TESTING/TEST_CASES.md) — danh sách test case ban đầu.
+- [TEST_PLAN](07_TESTING/TEST_PLAN.md)
+- [TEST_CASES](07_TESTING/TEST_CASES.md)
 
 ## 08 — Triển khai
 
-- [DEPLOYMENT_GUIDE](08_DEPLOYMENT/DEPLOYMENT_GUIDE.md) — cấu hình môi trường, Docker, triển khai và vận hành.
+- [DEPLOYMENT_GUIDE](08_DEPLOYMENT/DEPLOYMENT_GUIDE.md)
 
 ## 09 — AI/ML
 
-- [DATASET_SPECIFICATION](09_AI_ML/DATASET_SPECIFICATION.md) — cấu trúc dữ liệu, nhãn và quản lý phiên bản dataset.
-- [PREPROCESSING](09_AI_ML/PREPROCESSING.md) — pipeline tiền xử lý tiếng Việt.
-- [MODEL_DESIGN](09_AI_ML/MODEL_DESIGN.md) — baseline, mô hình, đánh giá, serving và quản lý phiên bản.
+- [DATASET_SPECIFICATION](09_AI_ML/DATASET_SPECIFICATION.md)
+- [PREPROCESSING](09_AI_ML/PREPROCESSING.md)
+- [MODEL_DESIGN](09_AI_ML/MODEL_DESIGN.md)
 
-## Quy ước trạng thái
+## 10 — Governance và implementation tracking
 
-- **Draft:** bản nháp đang được rà soát.
-- **Proposed:** phương án đề xuất, cần phê duyệt.
-- **Approved:** chủ dự án đã chấp thuận.
-- **TBD:** chưa có quyết định hoặc dữ liệu đủ tin cậy.
-- **Deprecated:** không còn áp dụng; cần chỉ ra tài liệu thay thế.
+- [REPOSITORY_AUDIT](10_PROJECT_GOVERNANCE/REPOSITORY_AUDIT.md)
+- [REQUIREMENTS_TRACEABILITY_MATRIX](10_PROJECT_GOVERNANCE/REQUIREMENTS_TRACEABILITY_MATRIX.md)
+- [IMPLEMENTATION_PLAN](10_PROJECT_GOVERNANCE/IMPLEMENTATION_PLAN.md)
+- [DECISION_LOG](10_PROJECT_GOVERNANCE/DECISION_LOG.md)
+- [IMPLEMENTATION_STATUS](10_PROJECT_GOVERNANCE/IMPLEMENTATION_STATUS.md)
+- [ADR-0001 Docker-only](10_PROJECT_GOVERNANCE/ADR/ADR-0001-DOCKER-ONLY.md)
+- [ADR-0002 Technology Stack](10_PROJECT_GOVERNANCE/ADR/ADR-0002-TECHNOLOGY-STACK.md)
+- [ADR-0003 Local Integration Baseline](10_PROJECT_GOVERNANCE/ADR/ADR-0003-LOCAL-INTEGRATION-BASELINE.md)
+- [ADR-0004 AI Confidence and Audit](10_PROJECT_GOVERNANCE/ADR/ADR-0004-AI-CONFIDENCE-AND-AUDIT.md)
 
-## Quy tắc cập nhật
+## Quy ước cập nhật
 
-Mỗi thay đổi ảnh hưởng đến nghiệp vụ, API, dữ liệu, bảo mật hoặc triển khai phải cập nhật tài liệu liên quan. Không coi tài liệu là đã được phê duyệt chỉ vì file đã tồn tại trong GitHub.
-
-
-## 10 — Quản trị dự án và theo dõi triển khai
-
-- [REPOSITORY_AUDIT](10_PROJECT_GOVERNANCE/REPOSITORY_AUDIT.md) — kết quả kiểm tra trạng thái repository, bằng chứng và blockers.
-- [REQUIREMENTS_TRACEABILITY_MATRIX](10_PROJECT_GOVERNANCE/REQUIREMENTS_TRACEABILITY_MATRIX.md) — ánh xạ SRS/BRD tới module, API, 12 bảng, test cases và trạng thái.
-- [IMPLEMENTATION_PLAN](10_PROJECT_GOVERNANCE/IMPLEMENTATION_PLAN.md) — các phase, dependencies, work packages và acceptance criteria.
-- [DECISION_LOG](10_PROJECT_GOVERNANCE/DECISION_LOG.md) — các quyết định đã xác lập và nội dung còn TBD.
-- [ADR-0001 Docker-only](10_PROJECT_GOVERNANCE/ADR/ADR-0001-DOCKER-ONLY.md) — quyết định Docker-only cho máy cá nhân.
+Tài liệu đánh dấu TBD/Proposed không tự trở thành quyết định đã được phê duyệt. Mọi thay đổi ảnh hưởng nghiệp vụ, API, Database, bảo mật hoặc triển khai phải cập nhật tài liệu chuyên ngành và Requirements Traceability Matrix trong cùng Pull Request.

@@ -2,102 +2,110 @@
 
 | Thuộc tính | Giá trị |
 |---|---|
-| Phiên bản | 1.0 |
-| Trạng thái | Partially known / Pending confirmation |
+| Phiên bản | 1.1 |
+| Trạng thái | Approved for initial implementation by delegated Master Prompt; production choices remain separate |
+| Cập nhật | 2026-11-27 |
 
 ## 1. Nguyên tắc lựa chọn
 
-Chọn công nghệ dựa trên yêu cầu, khả năng triển khai, độ ổn định và mức độ bảo trì. Không thêm framework/library chỉ vì phổ biến. Phiên bản phải được pin trong dependency lock/config khi bắt đầu triển khai.
+Chọn công nghệ theo yêu cầu NLP tiếng Việt, khả năng bảo trì, tương thích runtime và Docker-only. Các version dưới đây là direct dependency baseline đã pin trong manifest hoặc Dockerfile. Đây chưa phải bằng chứng build thành công; transitive lock và container verification là build gate bắt buộc.
 
-## 1.1. Quyết định vận hành: Docker-only trên máy cá nhân
+## 1.1. Quyết định vận hành: Docker-only
 
-**Yêu cầu đã thống nhất với chủ dự án:** ST-NLP phải được phát triển và chạy theo mô hình Docker-first/Docker-only. Người dùng không phải cài runtime hoặc thư viện của dự án trực tiếp trên máy cá nhân.
+Máy host chỉ cần Git, Docker Desktop/Engine + Compose và trình duyệt. IDE/editor là tùy chọn. Không cài Python, Node.js, npm, PostgreSQL, Redis hoặc package dự án trên Windows host.
 
-Máy host chỉ cần:
-- Git.
-- Docker Desktop trên Windows/macOS hoặc Docker Engine trên Linux.
-- Docker Compose plugin.
-- Trình duyệt; IDE/editor là tùy chọn.
+Mọi runtime, dependency, Database, migration, seed, lint, test, training và script quản trị chạy trong container. Mục tiêu sau khi hoàn thiện:
 
-Không yêu cầu cài Python, Node.js, npm/pnpm/yarn, database server/client, Redis, thư viện NLP/ML hoặc package manager dự án trên host.
+    git clone https://github.com/khanh0102102/st-nlp.git
+    cd st-nlp
+    docker compose up --build -d
 
-Toàn bộ runtime, dependency và service phải được đóng gói/chạy trong container. Dockerfile cài dependency dựa trên manifest/lockfile; Docker Compose điều phối các service. Các lệnh lint, test, migration, seed, training và quản trị phải chạy qua `docker compose run/exec`.
+Credential thật của Google OAuth hoặc nhà cung cấp ngoài phải cấu hình qua secret/environment; không commit vào Git. Lệnh khởi động trong README là mục tiêu hiện tại, chưa được xác minh bằng Docker ở branch này.
 
-**Trải nghiệm cuối cùng mong muốn:** sau khi clone repository, người dùng chạy `docker compose up --build -d` để build và khởi động hệ thống. Điều này là tiêu chí thiết kế và nghiệm thu, chưa phải trạng thái hiện tại vì Compose đang là placeholder.
+## 2. Stack local đã chốt cho implementation
 
-Các credential của dịch vụ bên ngoài như Google OAuth hoặc map provider không phải thư viện cần cài trên host; nếu chức năng yêu cầu, chúng được cấu hình an toàn qua .env/secret và không commit vào Git.
-
-## 2. Những định hướng đã xuất hiện trong quá trình phát triển
-
-| Thành phần | Định hướng hiện có | Trạng thái |
+| Thành phần | Công nghệ | Phiên bản baseline |
 |---|---|---|
-| Backend language | Python | Đã có trong hướng triển khai trước |
-| ORM | SQLAlchemy | Đã được dùng/định hướng trong thiết kế Database |
-| Container | Docker Compose | Đã được dùng trong workflow phát triển trước |
-| Citizen identity | Google OAuth | Yêu cầu nghiệp vụ đã thống nhất |
-| NLP/ML | Naive Bayes, SVM, CNN 1D, LSTM | Nhóm mô hình nghiên cứu đã xác định |
+| Frontend runtime | Node.js Active LTS line | 26 |
+| Frontend | React | 19.3.1 |
+| Language | TypeScript | 5.9.3 |
+| Frontend build | Vite | 8.4.0 |
+| Package manager | npm | đi kèm Node 26; package-lock pending |
+| Backend runtime | Python | 3.14.10 |
+| Backend API | FastAPI | 0.165.0 |
+| ASGI server | Uvicorn | 0.54.0 |
+| Validation/config | Pydantic / pydantic-settings | 2.14.4 / 2.16.3 |
+| ORM | SQLAlchemy | 2.1.9 |
+| Migration | Alembic | 1.20.1 |
+| PostgreSQL driver | psycopg | 3.3.9 |
+| Database | PostgreSQL | 18.7 |
+| Vietnamese tokenization | underthesea | 9.5.0 (ML image, not API image) |
+| Classical ML | scikit-learn | 1.9.1 (ML image) |
+| Deep learning | PyTorch CPU | 2.15.0 (separate ML image when needed) |
+| Backend test/client | pytest / httpx | 9.2.0 / 0.29.0 |
+| Python lint | Ruff | 0.17.6 |
+| Web server | Nginx stable Alpine line | stable-alpine3.24 |
+| Orchestration | Docker Compose | version bundled with Docker Desktop/Compose plugin |
 
-Các mục trên cần đối chiếu với dependency/code được đưa vào repository. Chưa có cơ sở để tuyên bố phiên bản cụ thể đang được pin ở đây.
+### Dependency policy
 
-## 3. Thành phần chưa chốt
+- requirements.txt pins direct backend runtime dependencies.
+- requirements-dev.txt adds test/lint dependencies.
+- frontend/package.json pins direct frontend dependencies.
+- npm package-lock.json and a Python transitive/hash lock are still required. They must be generated and committed from Docker before the stack can be considered reproducible.
+- PyTorch and underthesea are intentionally not installed into the API image; they belong to the dedicated NLP/ML image/worker to keep the web API image smaller.
+- CPU-only PyTorch is chosen for local compatibility; no GPU/NVIDIA runtime is required on the host.
+- Base image patch digests and complete dependency locks must be captured in the release hardening step.
 
-| Thành phần | Lựa chọn cần quyết định | Ghi chú |
-|---|---|---|
-| Frontend framework | TBD | React/Vue/Angular hoặc lựa chọn khác |
-| Frontend language | TBD | TypeScript được khuyến nghị nếu phù hợp |
-| Backend framework | TBD | FastAPI/Flask/Django hoặc framework đang dùng |
-| Python runtime | TBD | Kiểm tra phiên bản môi trường dự án |
-| Database engine | TBD | PostgreSQL được cân nhắc nếu cần geospatial/JSON và quan hệ mạnh |
-| Migration | TBD | Alembic thường phù hợp với SQLAlchemy |
-| Cache/Queue | TBD | Chỉ thêm khi có tác vụ async/scale |
-| File storage | TBD | Local dev + object storage private ở production |
-| Map provider | TBD | Cần xác minh giá, quota, geocoding và terms |
-| Authentication/session | TBD | Google OIDC; session/cookie/token cần chốt |
-| ML tracking/registry | TBD | Có thể bắt đầu bằng metadata DB và artifact storage |
-| CI/CD | TBD | GitHub Actions là một lựa chọn |
-| Hosting | TBD | Cần quyết định môi trường và ngân sách |
+## 3. Kiến trúc triển khai
 
-Không tự cài một stack hoàn chỉnh dựa trên các gợi ý trong bảng. Chủ dự án cần duyệt stack trước khi tạo cấu trúc phụ thuộc không dễ thay đổi.
+- Modular monolith: one FastAPI Backend API, one React SPA and one PostgreSQL Database.
+- Citizen Portal and Admin Portal are separated by route/layout and server-side authorization. They are not allowed to rely on frontend route hiding as security.
+- Nginx serves the built SPA and reverse-proxies /api and /health to Backend.
+- SQLAlchemy synchronous engine + psycopg 3 for the initial API foundation. Long-running training will not execute inside request handlers.
+- PostgreSQL native UUID, JSONB and timezone-aware timestamps. WGS84/EPSG:4326 coordinates are stored as latitude/longitude; PostGIS is not introduced in foundation.
+- No Redis or worker service until a concrete async queue/training job requires it. A separate worker container can be added later without changing the 12-table relational baseline.
+- Database port is not published to host by default.
 
-## 4. NLP/ML stack
+## 4. Các quyết định triển khai khác
 
-Các nhóm thư viện dự kiến cần cân nhắc:
-- Xử lý dữ liệu: pandas/NumPy hoặc công cụ tương đương.
-- Baseline NLP: scikit-learn cho vectorizer, Naive Bayes, SVM và calibration.
-- Deep learning: PyTorch hoặc TensorFlow/Keras cho CNN 1D/LSTM.
-- Tokenization tiếng Việt: chọn thư viện phù hợp dữ liệu và mô hình.
-- Evaluation: scikit-learn metrics và công cụ trực quan hóa.
+Các quyết định local về staff account provisioning, workflow, storage, map, confidence và audit được ghi trong:
+- ADR-0003-LOCAL-INTEGRATION-BASELINE.md
+- ADR-0004-AI-CONFIDENCE-AND-AUDIT.md
 
-Thư viện và phiên bản chỉ được chốt sau khi có thử nghiệm tương thích và file lock.
+Tóm tắt:
+- Citizen Google OIDC; staff local accounts provisioned separately; never auto-grant staff role based on a Google email.
+- Report workflow local v1: SUBMITTED, UNDER_REVIEW, IN_PROGRESS, RESOLVED, REJECTED, CLOSED.
+- Local image upload: JPEG/PNG/WebP, at most 5 files/report and 10 MiB/file; private named volume.
+- Location coordinate reference: WGS84/EPSG:4326; local demo map uses Leaflet + OSM attribution.
+- Every initial prediction requires human review; do not turn raw scores into percentages.
+- Local audit events use separate JSONL named volume; production audit sink remains open.
 
-## 5. Môi trường
+## 5. Những quyết định chưa được áp dụng cho production
 
-Tất cả môi trường phải ưu tiên container hóa:
-- local development: Docker Compose.
-- automated test/CI: Docker image/container; không cài dependency dự án trực tiếp trên runner host ngoài Docker engine.
-- staging: container image đã build và kiểm tra.
-- production: container image có version/tag bất biến, secret và dữ liệu tách biệt.
+- Staff identity provider, MFA and production account provisioning.
+- Google OAuth credentials and allowed origins.
+- Production object storage, malware scanning, file retention and deletion.
+- Production map/tile/geocoding provider, terms, quota and privacy.
+- Durable audit sink, retention, backup and tamper-evidence.
+- Dataset source, license, consent and privacy approval.
+- Confidence calibration and model acceptance thresholds.
+- Hosting, domain, TLS, secrets manager, CI/CD, backup RPO/RTO and quantified NFR targets.
 
-Mỗi môi trường dùng cấu hình và secret riêng. Không copy database production xuống local nếu chưa ẩn danh/được phép. Không tạo hướng dẫn yêu cầu cài runtime/library dự án trên host.
+Không dùng credential/paid services hoặc triển khai production khi chưa có phê duyệt riêng.
 
-## 6. Nguyên tắc dependency
+## 6. Nguồn lựa chọn và kiểm tra version
 
-- Pin phiên bản trực tiếp/gián tiếp bằng lockfile.
-- Kiểm tra license và lỗ hổng bảo mật.
-- Loại bỏ dependency không sử dụng.
-- Tránh phụ thuộc vào API deprecated.
-- Có quy trình nâng phiên bản và chạy regression tests.
-- Ghi lý do khi thêm dependency lớn.
+Version metadata was checked on 2026-11-27 using official project release pages and package indexes:
+- Node.js: https://nodejs.org/en/about/previous-releases
+- React: https://www.npmjs.com/package/react
+- Vite: https://vite.dev/guide/
+- Python: https://www.python.org/downloads/
+- FastAPI: https://github.com/fastapi/fastapi/releases
+- SQLAlchemy: https://pypi.org/project/SQLAlchemy/
+- PostgreSQL: https://www.postgresql.org/support/versioning/
+- PyTorch: https://pypi.org/project/torch/
+- underthesea: https://pypi.org/project/underthesea/
+- scikit-learn: https://pypi.org/project/scikit-learn/
 
-## 6.1. Quy tắc đóng gói dependency
-
-- Backend: Dockerfile cài Python runtime và package từ requirements/pyproject lock trong image.
-- Frontend: Dockerfile cài Node runtime và package từ lockfile trong image.
-- Database/cache/queue/storage: dùng container image chính thức/phù hợp, pin tag phiên bản; không cài service lên host.
-- NLP/ML: dependency và model runtime nằm trong image/worker image; artifact lớn lưu trong volume hoặc artifact storage, không commit Git.
-- Tối ưu multi-stage build và layer cache nhưng không hy sinh khả năng tái lập.
-- Dùng .dockerignore và không đưa .env, .venv, node_modules hoặc dataset riêng tư vào build context.
-
-## 7. Cổng phê duyệt stack
-
-Trước khi triển khai feature đầu tiên, cần chốt Frontend, Backend, DB, migration, auth/session, storage, map và test framework. Sau khi duyệt, cập nhật tài liệu này thành trạng thái Approved và pin phiên bản.
+Version selection is not equivalent to compatibility testing. The Docker clean-build and test evidence remains pending.
