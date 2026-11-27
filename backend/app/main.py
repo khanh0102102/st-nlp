@@ -4,6 +4,13 @@ from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import JSONResponse
 
 from app.api.auth import router as auth_router
+from app.api.attachments import router as attachments_router
+from app.api.dashboard import router as dashboard_router
+from app.api.reports import (
+    admin_router as admin_reports_router,
+    catalog_router,
+    citizen_router,
+)
 from app.api.health import router as health_router
 from app.core.config import get_settings
 from app.core.sessions import (
@@ -76,3 +83,8 @@ async def enforce_cookie_csrf(request, call_next):
 
 app.include_router(health_router)
 app.include_router(auth_router)
+app.include_router(catalog_router)
+app.include_router(citizen_router)
+app.include_router(admin_reports_router)
+app.include_router(dashboard_router)
+app.include_router(attachments_router)
