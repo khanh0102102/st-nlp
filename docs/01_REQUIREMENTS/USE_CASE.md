@@ -212,3 +212,14 @@ graph LR
 - Kết quả dự đoán và kết quả kiểm duyệt là hai khái niệm khác nhau.
 - Danh mục nhãn là nguồn dữ liệu chuẩn duy nhất.
 - Trạng thái và transition chưa chốt phải được hoàn thiện trước khi code workflow.
+
+
+## 6. Quy tắc phân loại và lưu dữ liệu
+
+Use case tạo phản ánh không yêu cầu Citizen chọn category. Hệ thống dùng nội dung text để đề xuất một nhãn trong 11 nhóm tại [CLASSIFICATION_SPECIFICATION](CLASSIFICATION_SPECIFICATION.md). Citizen cung cấp text/ảnh/vị trí; AI thực hiện phân loại.
+
+Khi kiểm duyệt, Moderator chọn xác nhận nhãn dự đoán hoặc chọn một category khác trong catalog cố định. Mỗi thao tác tạo một prediction_reviews record mới; prediction ban đầu không bị ghi đè. reports.final_category_id là nhãn nghiệp vụ hiện hành và được cập nhật cùng transaction với review.
+
+OTHER chỉ dùng cho phản ánh hợp lệ ngoài 10 nhóm; nội dung thiếu thông tin hoặc lỗi kỹ thuật cần trạng thái riêng. Dataset Samples phải lưu category FK hoặc labeling_status phù hợp và provenance của nguồn dữ liệu.
+
+Database baseline là 12 bảng theo DATABASE_DESIGN.md. Một hàng datasets biểu diễn một Dataset version; version FROZEN không sửa đổi.
