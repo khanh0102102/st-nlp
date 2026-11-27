@@ -263,30 +263,31 @@ def create_report(
         "confidence_type": None,
     }
     settings = get_settings()
-    try:
-        with httpx.Client(timeout=8.0) as client:
-            response = client.post(
-                settings.ml_service_url.rstrip("/") + "/internal/v1/predict",
-                headers={
-                    "Authorization": "Bearer "
-                    + settings.ml_internal_token.get_secret_value()
-                },
-                json={"report_id": str(report.id)},
+    if settings.ml_service_url.strip():
+        try:
+            with httpx.Client(timeout=8.0) as client:
+                response = client.post(
+                    settings.ml_service_url.rstrip("/") + "/internal/v1/predict",
+                    headers={
+                        "Authorization": "Bearer "
+                        + settings.ml_internal_token.get_secret_value()
+                    },
+                    json={"report_id": str(report.id)},
+                )
+            if response.status_code == 200:
+                prediction_payload = response.json()["data"]
+            elif response.status_code != 409:
+                logging.getLogger(__name__).warning(
+                    "ML service returned HTTP %s for report %s",
+                    response.status_code,
+                    report.id,
+                )
+        except httpx.HTTPError:
+            logging.getLogger(__name__).info(
+                "ML service is not reachable; report was saved with an explicit INFERENCE_FAILED record."
             )
-        if response.status_code == 200:
-            prediction_payload = response.json()["data"]
-        elif response.status_code != 409:
-            logging.getLogger(__name__).warning(
-                "ML service returned HTTP %s for report %s",
-                response.status_code,
-                report.id,
-            )
-    except httpx.HTTPError:
-        logging.getLogger(__name__).info(
-            "ML service is not reachable; report was saved with an explicit INFERENCE_FAILED record."
-        )
-
-    recorded = _audit(
+    
+        recorded = _audit(
         request, actor_id=user.id, action="report.submitted",
         resource_type="report", resource_id=report.id,
         details={

@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     google_client_id: str | None = None
     google_client_secret: SecretStr | None = None
     google_redirect_uri: str | None = None
-    ml_service_url: str = "http://ml:8001"
+    ml_service_url: str = ""
     ml_internal_token: SecretStr = SecretStr(
         "local-only-change-ml-internal-token-before-sharing"
     )
