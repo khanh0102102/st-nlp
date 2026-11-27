@@ -162,3 +162,28 @@ POST tạo report/review/trigger training có thể cần idempotency key. Updat
 - Frontend và Backend dùng contract test.
 - Breaking changes phải tăng API version hoặc có migration period.
 - Không cập nhật bảng endpoint mà bỏ quên code/tests.
+
+
+## 13. Contract danh mục và nhãn phân loại
+
+Nguồn chuẩn: [CLASSIFICATION_SPECIFICATION](../01_REQUIREMENTS/CLASSIFICATION_SPECIFICATION.md). API phải dùng category_code ổn định và trả category object có tối thiểu id, category_code, category_name, sort_order. Không dùng category_name làm khóa.
+
+Endpoint catalog read-only dùng chung cho hai portal:
+
+| Method | Endpoint | Mục đích | Quyền |
+|---|---|---|---|
+| GET | /api/v1/categories | Lấy đủ 11 danh mục theo sort_order | Public hoặc authenticated theo policy triển khai; không trả dữ liệu nhạy cảm |
+
+GET /api/v1/admin/categories hiện có trong danh sách admin có thể giữ làm route tương thích nếu cần, nhưng không tạo catalog khác. Seed Database phải có đúng 11 bản ghi.
+
+POST /api/v1/citizen/reports không nhận category_id/category_code do Citizen cung cấp ở baseline; Backend tạo report và gọi NLP. Response prediction tối thiểu gồm predicted_category (id/code/name nếu có), confidence_value, confidence_type, model_version, preprocessing_version, inference_status và needs_review. Không trả phần trăm confidence nếu score là raw decision score chưa calibration.
+
+POST /api/v1/admin/reports/{report_id}/reviews nhận category_code hoặc category ID thuộc catalog hiện hành, action CONFIRMED/CORRECTED và note nếu policy yêu cầu. Backend tự lấy reviewer từ principal, xác minh report/prediction thuộc nhau, ghi prediction_reviews và cập nhật reports.final_category_id trong một transaction. Client không được gửi reviewer_id hoặc ép final_category_id trực tiếp.
+
+Dataset sample API chỉ chấp nhận category_code thuộc 11 danh mục hoặc labeling_status được phép nếu chưa gán nhãn. OTHER là class hợp lệ; INSUFFICIENT_INFORMATION/NEEDS_REVIEW/UNLABELED là trạng thái sample, không phải category.
+
+## 14. Database persistence contract
+
+Database baseline đúng 12 bảng theo [DATABASE_DESIGN](../03_DATABASE/DATABASE_DESIGN.md). predictions phải truy được report, preprocessing run và model version; prediction_reviews là lịch sử append-only; mỗi row datasets là một version; training_metrics hỗ trợ metric tổng thể/per-class/per-split. API contract không được yêu cầu bảng phụ không có trong baseline.
+
+Audit event nhạy cảm được gửi qua audit sink append-only ngoài 12 bảng. Việc gửi audit cần xử lý lỗi/retry theo chính sách; không ghi secret, token hoặc raw report vào audit.
