@@ -38,6 +38,9 @@ jobs:
       - name: Run neural model tests in the CPU training image
         run: docker compose --profile test run --rm --no-deps ml-test
 
+      - name: Smoke-test the ML trainer CLI
+        run: docker compose --profile training run --rm --no-deps --build ml-trainer
+
       - name: Start application stack
         run: docker compose up -d
 
