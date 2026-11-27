@@ -1,0 +1,72 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+.secret/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.venv/
+venv/
+ENV/
+dist/
+build/
+*.egg-info/
+
+# Frontend / Node
+node_modules/
+.npm/
+.pnpm-store/
+.yarn/
+.next/
+.nuxt/
+dist/
+coverage/
+
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# Logs and runtime
+*.log
+logs/
+tmp/
+temp/
+*.pid
+
+# Local databases and backups
+*.sqlite
+*.sqlite3
+*.db
+backups/
+*.dump
+*.sql.gz
+
+# User uploads and generated artifacts
+uploads/
+media/
+artifacts/
+checkpoints/
+models/*.pt
+models/*.pth
+models/*.h5
+models/*.onnx
+
+# Test and notebook outputs
+.ipynb_checkpoints/
+.pytest_cache/

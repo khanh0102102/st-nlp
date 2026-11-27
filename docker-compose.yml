@@ -1,0 +1,5 @@
+# ST-NLP Compose scaffold.
+# This file is intentionally non-operational until the technology stack and
+# concrete frontend/backend/database/worker services are approved.
+name: st-nlp
+services: {}
