@@ -12,7 +12,7 @@ from torch.nn.utils.rnn import pack_padded_sequence
 from torch.utils.data import DataLoader, Dataset
 
 from app.ml.metrics import evaluate_predictions
-from app.ml.preprocessing import preprocess_text
+from app.ml.preprocessing import PREPROCESSING_VERSION, preprocess_text
 
 PAD = "<PAD>"
 UNK = "<UNK>"
@@ -197,6 +197,21 @@ def train_neural(
     epochs: int = 15,
     patience: int = 4,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
+    if model_family not in {"CNN_1D", "LSTM"}:
+        raise ValueError("Neural model family must be CNN_1D or LSTM.")
+    if not (len(train_texts) == len(train_labels) and train_texts):
+        raise ValueError("Neural training data must be non-empty and aligned.")
+    if len(validation_texts) != len(validation_labels) or not validation_texts:
+        raise ValueError("Neural validation data must be non-empty and aligned.")
+    if len(test_texts) != len(test_labels) or not test_texts:
+        raise ValueError("Neural test data must be non-empty and aligned.")
+    if set(train_labels + validation_labels + test_labels) - set(class_codes):
+        raise ValueError("Neural data contains labels outside class_codes.")
+    if set(train_labels) != set(class_codes):
+        raise ValueError("TRAIN split must contain every configured class.")
+    if epochs < 1 or patience < 1:
+        raise ValueError("epochs and patience must be positive.")
+
     random.seed(random_seed)
     np.random.seed(random_seed)
     torch.manual_seed(random_seed)
@@ -301,14 +316,14 @@ def train_neural(
         "embedding_dim": EMBEDDING_DIM,
         "random_seed": random_seed,
         "best_epoch": best_epoch,
-        "preprocessing_version": "vi-nfc-lower-underthesea-v1",
+        "preprocessing_version": PREPROCESSING_VERSION,
     }
     output_path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(artifact, output_path)
     metadata = {
         "model_family": model_family,
         "class_codes": class_codes,
-        "preprocessing_version": "vi-nfc-lower-underthesea-v1",
+        "preprocessing_version": PREPROCESSING_VERSION,
         "random_seed": random_seed,
         "best_epoch": best_epoch,
         "confidence_type": "MODEL_PROBABILITY_UNCALIBRATED",

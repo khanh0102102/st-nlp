@@ -1,0 +1,5 @@
+# Training/evaluation dependencies for Vietnamese classical NLP models.
+numpy==2.5.5
+joblib==1.6.0
+scikit-learn==1.9.1
+underthesea==9.5.0

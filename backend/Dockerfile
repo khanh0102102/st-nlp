@@ -30,7 +30,8 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 FROM base AS test
 
 COPY backend/requirements-dev.txt ./requirements-dev.txt
-RUN python -m pip install --no-cache-dir -r requirements-dev.txt
+COPY backend/requirements-ml.txt ./requirements-ml.txt
+RUN python -m pip install --no-cache-dir -r requirements-dev.txt -r requirements-ml.txt
 COPY backend/alembic.ini ./alembic.ini
 COPY backend/migrations ./migrations
 COPY --chown=stnlp:stnlp backend/app ./app
@@ -39,3 +40,17 @@ COPY --chown=stnlp:stnlp backend/tests ./tests
 USER stnlp
 
 CMD ["python", "-m", "pytest", "-q", "-p", "no:cacheprovider"]
+
+FROM base AS ml-training
+
+COPY backend/requirements-ml.txt ./requirements-ml.txt
+COPY backend/requirements-neural.txt ./requirements-neural.txt
+RUN python -m pip install --no-cache-dir -r requirements-ml.txt -r requirements-neural.txt
+COPY backend/alembic.ini ./alembic.ini
+COPY backend/migrations ./migrations
+COPY --chown=stnlp:stnlp backend/app ./app
+
+USER stnlp
+
+ENTRYPOINT ["python", "-m", "app.ml.cli"]
+CMD ["--help"]

@@ -181,3 +181,31 @@ Rollback phải xét cả application, database và model:
 ## 13. TBD
 
 Hosting platform, domain, TLS provider, DB engine, storage, map provider, CI/CD, secret manager, monitoring, backup frequency, RPO/RTO và deployment approval.
+
+## Huấn luyện mô hình trong Docker
+
+API runtime không cài các thư viện ML nặng. Image huấn luyện riêng được bật bằng profile `training` và dùng chung PostgreSQL cùng named volume `model_artifacts_data` với API.
+
+Khởi động stack trước để API thực hiện migration và seed:
+
+```bash
+docker compose up --build -d
+```
+
+Build image huấn luyện và xem CLI:
+
+```bash
+docker compose --profile training build ml-trainer
+docker compose --profile training run --rm ml-trainer --help
+```
+
+Huấn luyện NB hoặc SVM trên một dataset đã ở trạng thái FROZEN:
+
+```bash
+docker compose --profile training run --rm ml-trainer train --dataset-id <DATASET_UUID> --model-family NB --created-by <ADMIN_USER_UUID>
+docker compose --profile training run --rm ml-trainer train --dataset-id <DATASET_UUID> --model-family SVM --created-by <ADMIN_USER_UUID>
+```
+
+Có thể dùng `--seed` và `--epochs` để cấu hình lần chạy; `--epochs` chỉ áp dụng cho CNN_1D/LSTM. Các model artifacts được lưu trong named volume dùng chung với API. Không xóa volume nếu cần giữ model artifacts hoặc dữ liệu PostgreSQL.
+
+Lưu ý: training yêu cầu dataset FROZEN có đủ ba split TRAIN/VALIDATION/TEST, và TRAIN phải có đủ 11 category. Score của SVM là `RAW_DECISION_SCORE`; xác suất Naive Bayes là `MODEL_PROBABILITY_UNCALIBRATED`. Cả hai chưa được coi là calibrated probability.

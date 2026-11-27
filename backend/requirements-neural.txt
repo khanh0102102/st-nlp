@@ -1,0 +1,2 @@
+# Optional CPU neural-training dependency set; install only in the ML training image.
+torch==2.15.0

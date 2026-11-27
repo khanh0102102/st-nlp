@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import os
 import platform
-import sys
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -25,7 +23,7 @@ from app.db.models import (
 )
 from app.ml.classical import fit_classical
 from app.ml.metrics import evaluate_predictions, flatten_metrics
-from app.ml.neural import train_neural
+from app.ml.preprocessing import PREPROCESSING_VERSION
 
 SUPPORTED_FAMILIES = {"NB", "SVM", "CNN_1D", "LSTM"}
 
@@ -142,7 +140,7 @@ def train_registered_model(
             "class_count": len(class_codes),
             "splits": {key: len(value["labels"]) for key, value in splits.items()},
         },
-        preprocessing_version="vi-nfc-lower-underthesea-v1",
+        preprocessing_version=PREPROCESSING_VERSION,
         random_seed=random_seed,
         code_version=os.getenv("GIT_COMMIT_SHA"),
         environment_version=f"python-{platform.python_version()}",
@@ -155,7 +153,7 @@ def train_registered_model(
     session.refresh(run)
 
     settings = get_settings()
-    version_label = datetime.now(UTC).strftime("v%Y%m%dT%H%M%SZ") + "-" + uuid4().hex[:6]
+    version_label = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid4().hex[:6]
     suffix = ".joblib" if family in {"NB", "SVM"} else ".pt"
     relative_path = Path("models") / family.lower() / version_label / ("model" + suffix)
     artifact_path = settings.model_artifacts_dir / relative_path
@@ -163,18 +161,6 @@ def train_registered_model(
 
     try:
         if family in {"NB", "SVM"}:
-            processed_train = [
-                __import__("app.ml.preprocessing", fromlist=["preprocess_text"]).preprocess_text(text)
-                for text in splits["TRAIN"]["texts"]
-            ]
-            processed_validation = [
-                __import__("app.ml.preprocessing", fromlist=["preprocess_text"]).preprocess_text(text)
-                for text in splits["VALIDATION"]["texts"]
-            ]
-            processed_test = [
-                __import__("app.ml.preprocessing", fromlist=["preprocess_text"]).preprocess_text(text)
-                for text in splits["TEST"]["texts"]
-            ]
             model, metadata = fit_classical(
                 family,
                 splits["TRAIN"]["texts"],
@@ -182,21 +168,12 @@ def train_registered_model(
                 random_seed,
             )
             metrics = {
-                "TRAIN": evaluate_predictions(
-                    splits["TRAIN"]["labels"],
-                    model.predict(processed_train).tolist(),
+                split: evaluate_predictions(
+                    values["labels"],
+                    model.predict(values["texts"]).tolist(),
                     class_codes,
-                ),
-                "VALIDATION": evaluate_predictions(
-                    splits["VALIDATION"]["labels"],
-                    model.predict(processed_validation).tolist(),
-                    class_codes,
-                ),
-                "TEST": evaluate_predictions(
-                    splits["TEST"]["labels"],
-                    model.predict(processed_test).tolist(),
-                    class_codes,
-                ),
+                )
+                for split, values in splits.items()
             }
             artifact_path.parent.mkdir(parents=True, exist_ok=True)
             joblib.dump(
@@ -204,8 +181,20 @@ def train_registered_model(
                 artifact_path,
                 compress=3,
             )
-            hyperparameters = {"tfidf": "word unigram/bigram", "seed": random_seed}
+            hyperparameters = {
+                "tfidf": metadata["vectorizer"],
+                "classifier": metadata["hyperparameters"],
+                "confidence_type": metadata["confidence_type"],
+            }
         else:
+            try:
+                from app.ml.neural import train_neural
+            except ImportError as exc:
+                raise RuntimeError(
+                    "CNN_1D/LSTM training requires the optional neural dependencies "
+                    "listed in backend/requirements-neural.txt."
+                ) from exc
+
             metadata, metrics = train_neural(
                 model_family=family,
                 train_texts=splits["TRAIN"]["texts"],
@@ -223,6 +212,7 @@ def train_registered_model(
                 "max_epochs": epochs,
                 "best_epoch": metadata["best_epoch"],
                 "seed": random_seed,
+                "confidence_type": metadata["confidence_type"],
             }
 
         checksum = _sha256_file(artifact_path)
@@ -232,7 +222,8 @@ def train_registered_model(
         for item in metric_rows:
             category_id = (
                 code_to_id[item["category_code"]]
-                if item["category_code"] else None
+                if item["category_code"]
+                else None
             )
             session.add(
                 TrainingMetric(
@@ -243,6 +234,7 @@ def train_registered_model(
                     averaging=item["averaging"],
                     category_id=category_id,
                     support_count=item["support_count"],
+                    metric_details_json=item.get("metric_details_json"),
                 )
             )
 
@@ -270,7 +262,7 @@ def train_registered_model(
             algorithm_name=run.algorithm_name,
             version_label=version_label,
             text_representation=run.text_representation,
-            preprocessing_version="vi-nfc-lower-underthesea-v1",
+            preprocessing_version=PREPROCESSING_VERSION,
             label_schema_version="stnlp-11-categories-v1",
             training_run_id=run.id,
             artifact_uri=relative_path.as_posix(),

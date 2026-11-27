@@ -70,6 +70,24 @@ services:
       - -c
       - alembic -c /app/alembic.ini upgrade head && python -m app.db.seed && python -m pytest -q -p no:cacheprovider
 
+  ml-trainer:
+    profiles: ["training"]
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: ml-training
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-stnlp}:${POSTGRES_PASSWORD:-stnlp_local_only_change_me}@db:5432/${POSTGRES_DB:-stnlp}
+      MODEL_ARTIFACTS_DIR: /data/model-artifacts
+    volumes:
+      - model_artifacts_data:/data/model-artifacts
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["--help"]
+    restart: "no"
+
   web:
     build:
       context: .
