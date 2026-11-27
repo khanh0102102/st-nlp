@@ -1,0 +1,70 @@
+# Git metadata and repository-only files
+.git
+.github
+
+# Secrets and environment-specific files
+.env
+.env.*
+!.env.example
+secrets/
+*.pem
+*.key
+
+# Python runtime, caches and coverage
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Frontend dependencies and build outputs
+node_modules/
+.npm/
+.pnpm-store/
+.yarn/
+.next/
+.nuxt/
+dist/
+coverage/
+
+# IDE and operating system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# Logs, temp files and runtime data
+*.log
+*.pid
+logs/
+tmp/
+temp/
+uploads/
+media/
+
+# User datasets, model artifacts and generated checkpoints
+datasets/
+artifacts/
+checkpoints/
+models/
+*.pt
+*.pth
+*.h5
+*.onnx
+
+# Local databases and backups
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.sql.gz
+
+# Notebook outputs
+.ipynb_checkpoints/
