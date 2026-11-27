@@ -109,3 +109,36 @@
 ## 8. Cột ghi kết quả khi chạy
 
 Khi thực thi, bổ sung: Actual Result, Pass/Fail/Blocked, Build/Commit, Tester, Executed At, Evidence Link, Defect ID. Không thay Expected Result để hợp thức hóa lỗi thực tế.
+
+
+## 9. Classification Catalog — 11 danh mục
+
+| ID | Kịch bản | Kết quả mong đợi |
+|---|---|---|
+| TC-CAT-001 | Seed catalog trên DB rỗng | Có chính xác 11 bản ghi |
+| TC-CAT-002 | Chạy seed lần thứ hai | Không sinh duplicate, dữ liệu không đổi |
+| TC-CAT-003 | Đọc catalog từ API | Trả đúng 11 mã/tên/thứ tự theo Classification Specification |
+| TC-CAT-004 | Hiển thị Dashboard không có dữ liệu | Vẫn hiển thị đủ 11 nhóm với count 0 |
+| TC-CAT-005 | Gửi review với category_code không tồn tại | Backend từ chối validation |
+| TC-CAT-006 | Đổi category_name nhưng giữ code trong migration có kiểm soát | FK/API/model mapping vẫn ổn định |
+| TC-CAT-007 | Model trả mã ngoài 11 category_code | Prediction mapping báo lỗi, không lưu nhãn sai |
+| TC-CAT-008 | Phản ánh hợp lệ ngoài 10 nhóm đầu | Có thể gán OTHER sau đánh giá/kiểm duyệt |
+| TC-CAT-009 | Nội dung thiếu thông tin | Không ép thành OTHER; lưu trạng thái phù hợp |
+
+## 10. Database 12 bảng và tính nhất quán
+
+| ID | Kịch bản | Kết quả mong đợi |
+|---|---|---|
+| TC-DB-001 | Tạo Citizen, report và attachments | FK owner/report đúng; file chỉ lưu storage reference trong DB |
+| TC-DB-002 | Preprocess report | Tạo preprocessing_runs; reports.raw_content không đổi |
+| TC-DB-003 | Tạo prediction thành công | Gắn đúng report, preprocessing run, model version và category |
+| TC-DB-004 | Inference thất bại | Report vẫn còn; prediction có trạng thái lỗi và category nullable |
+| TC-DB-005 | Review xác nhận nhãn AI | Thêm prediction_reviews và cập nhật reports.final_category_id atomically |
+| TC-DB-006 | Review sửa nhãn | Giữ prediction cũ; ghi nhãn trước/sau và actor/time |
+| TC-DB-007 | Review lần hai | Thêm hàng history mới; không update/xóa review trước |
+| TC-DB-008 | Dataset version đóng băng | Sample/config không thể bị sửa; tạo version mới cho thay đổi |
+| TC-DB-009 | Sample chưa gán nhãn | category_id NULL chỉ khi labeling_status cho phép |
+| TC-DB-010 | Training run tham chiếu dataset version | Run lưu đúng dataset/version, cấu hình và status |
+| TC-DB-011 | Training metrics per-class | Có category_id, split, averaging và support đúng |
+| TC-DB-012 | Schema migration | Có đúng 12 bảng baseline; không tự thêm bảng thứ 13 |
+| TC-DB-013 | Review/audit sink tạm thời lỗi | Không làm mất dữ liệu review đã commit; audit event retry/được cảnh báo theo policy |
