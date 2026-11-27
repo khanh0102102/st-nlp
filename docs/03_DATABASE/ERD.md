@@ -20,6 +20,9 @@ erDiagram
     users ||--o{ reports : submits
     users ||--o{ report_attachments : uploads
     users ||--o{ prediction_reviews : reviews
+    users ||--o{ datasets : creates
+    users ||--o{ training_runs : starts
+    users o|--o{ model_versions : registers
     incident_categories ||--o{ reports : final_label
     incident_categories ||--o{ predictions : predicted_label
     incident_categories ||--o{ prediction_reviews : previous_label
@@ -34,7 +37,7 @@ erDiagram
     reports o|--o{ dataset_samples : optional_source
 
     preprocessing_runs ||--o{ predictions : input_for
-    model_versions ||--o{ predictions : produces
+    model_versions o|--o{ predictions : produces
     predictions ||--o{ prediction_reviews : reviewed_as
 
     datasets ||--o{ dataset_samples : contains
