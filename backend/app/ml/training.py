@@ -23,7 +23,7 @@ from app.db.models import (
 )
 from app.ml.classical import fit_classical
 from app.ml.metrics import evaluate_predictions, flatten_metrics
-from app.ml.preprocessing import PREPROCESSING_VERSION
+from app.ml.preprocessing import PREPROCESSING_VERSION, text_fingerprint
 
 SUPPORTED_FAMILIES = {"NB", "SVM", "CNN_1D", "LSTM"}
 
@@ -73,13 +73,16 @@ def _load_training_data(session: Session, dataset_id: UUID):
             raise ValueError(f"Labeled sample {row.id} has an invalid category.")
         if row.split not in by_split:
             raise ValueError(f"Sample {row.id} has no valid TRAIN/VALIDATION/TEST split.")
-        fingerprint = row.text_fingerprint or hashlib.sha256(
-            row.text_content.encode("utf-8")
-        ).hexdigest()
+        # Recompute from immutable text; stored fingerprints may use an older policy.
+        fingerprint = text_fingerprint(row.text_content)
         previous_split = fingerprints.get(fingerprint)
-        if previous_split and previous_split != row.split:
+        if previous_split is not None:
+            if previous_split != row.split:
+                raise ValueError(
+                    "Identical normalized text appears in multiple dataset splits."
+                )
             raise ValueError(
-                "Identical text fingerprint appears in multiple dataset splits."
+                "Duplicate normalized text appears more than once in the same dataset split."
             )
         fingerprints[fingerprint] = row.split
         by_split[row.split].append(row)

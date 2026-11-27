@@ -45,4 +45,10 @@ def test_non_string_text_is_rejected() -> None:
 
 
 def test_text_fingerprint_uses_normalized_source() -> None:
-    assert text_fingerprint("  Đường Hư Hỏng  ") == text_fingerprint("đường hư hỏng")
+    composed = "  Cống   THOÁT nước bị nghẹt tại tuyến đường kiểm thử. "
+    decomposed = unicodedata.normalize(
+        "NFD",
+        "cỐNG\n thoát   nước bị nghẹt tại tuyến đường kiểm thử.",
+    )
+
+    assert text_fingerprint(composed) == text_fingerprint(decomposed)

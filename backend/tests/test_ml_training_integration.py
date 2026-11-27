@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import unicodedata
 from datetime import UTC, datetime
 from types import SimpleNamespace
 from uuid import uuid4
@@ -21,6 +22,7 @@ from app.db.models import (
 )
 from app.infrastructure.database import engine
 from app.ml.classical import load_classical_artifact, predict_classical
+from app.api.datasets import _validation_result
 
 
 @pytest.fixture
@@ -274,7 +276,14 @@ def test_training_rejects_identical_text_fingerprint_across_splits(
     db_session.flush()
 
     duplicate_text = "Cống thoát nước bị nghẹt tại tuyến đường kiểm thử."
-    fingerprint = _fingerprint(duplicate_text)
+    equivalent_text = unicodedata.normalize(
+        "NFD",
+        "  CỐNG   thoát nước bị nghẹt tại tuyến đường kiểm thử. ",
+    )
+    legacy_fingerprint = _fingerprint(duplicate_text)
+    equivalent_legacy_fingerprint = _fingerprint(equivalent_text)
+    assert legacy_fingerprint != equivalent_legacy_fingerprint
+
     db_session.add_all(
         [
             DatasetSample(
@@ -284,26 +293,31 @@ def test_training_rejects_identical_text_fingerprint_across_splits(
                 labeling_status="LABELED",
                 split="TRAIN",
                 source_type="SYNTHETIC_CI",
-                text_fingerprint=fingerprint,
+                text_fingerprint=legacy_fingerprint,
             ),
             DatasetSample(
                 dataset_id=dataset.id,
-                text_content=duplicate_text,
+                text_content=equivalent_text,
                 category_id=categories[0].id,
                 labeling_status="LABELED",
                 split="VALIDATION",
                 source_type="SYNTHETIC_CI",
-                text_fingerprint=fingerprint,
+                text_fingerprint=equivalent_legacy_fingerprint,
             ),
         ]
     )
     db_session.flush()
     dataset.sample_count = 2
+
+    # Dataset validation and training must ignore stale/raw-byte fingerprints.
+    validation = _validation_result(db_session, dataset)
+    assert any("more than one data split" in issue for issue in validation["issues"])
+
     dataset.dataset_status = "FROZEN"
     dataset.frozen_at = datetime.now(UTC)
     db_session.flush()
 
-    with pytest.raises(ValueError, match="multiple dataset splits"):
+    with pytest.raises(ValueError, match="normalized text.*multiple dataset splits"):
         training_module._load_training_data(db_session, dataset.id)
 
     runs = db_session.scalars(

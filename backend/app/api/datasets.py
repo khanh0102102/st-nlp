@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import logging
 from datetime import UTC, datetime
 from typing import Literal
@@ -21,6 +20,7 @@ from app.db.models import (
     User,
 )
 from app.infrastructure.audit import append_audit_event
+from app.ml.preprocessing import text_fingerprint
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/admin/datasets", tags=["dataset management"])
@@ -195,7 +195,8 @@ def _validate_sample_source(
 
 
 def _fingerprint(text_content: str) -> str:
-    return hashlib.sha256(text_content.strip().encode("utf-8")).hexdigest()
+    """Use the exact same normalization fingerprint as ML preprocessing."""
+    return text_fingerprint(text_content)
 
 
 def _refresh_dataset_stats(session: Session, dataset: Dataset) -> None:
@@ -245,10 +246,13 @@ def _validation_result(session: Session, dataset: Dataset) -> dict[str, object]:
             issues.append(f"Sample {sample.id} has no valid data split.")
             continue
         by_split[sample.split].append(sample)
-        fingerprint = sample.text_fingerprint or _fingerprint(sample.text_content)
+        fingerprint = _fingerprint(sample.text_content)
         previous_split = seen_fingerprints.get(fingerprint)
-        if previous_split and previous_split != sample.split:
-            issues.append("Duplicate text appears in more than one data split.")
+        if previous_split is not None:
+            if previous_split != sample.split:
+                issues.append("Duplicate text appears in more than one data split.")
+            else:
+                issues.append("Duplicate text appears more than once in the same data split.")
         seen_fingerprints[fingerprint] = sample.split
 
     for split, rows in by_split.items():
@@ -436,14 +440,11 @@ def create_dataset_sample(
         text_content=text_content,
     )
     fingerprint = _fingerprint(text_content)
-    duplicate = session.scalar(
-        select(DatasetSample).where(
-            DatasetSample.dataset_id == dataset.id,
-            DatasetSample.text_fingerprint == fingerprint,
-        )
-    )
-    if duplicate is not None:
-        raise HTTPException(status_code=409, detail="This text already exists in the dataset.")
+    existing_samples = session.scalars(
+        select(DatasetSample).where(DatasetSample.dataset_id == dataset.id)
+    ).all()
+    if any(_fingerprint(item.text_content) == fingerprint for item in existing_samples):
+        raise HTTPException(status_code=409, detail="This normalized text already exists in the dataset.")
 
     sample = DatasetSample(
         dataset_id=dataset.id,
@@ -484,6 +485,8 @@ def update_dataset_sample(
     dataset = _dataset_for_update(session, sample.dataset_id)
 
     text_content = payload.text_content.strip() if payload.text_content is not None else sample.text_content
+    if not text_content:
+        raise HTTPException(status_code=422, detail="Sample text must not be blank.")
     category_code = payload.category_code
     if category_code is None and sample.category_id:
         current_category = session.get(IncidentCategory, sample.category_id)
@@ -504,15 +507,17 @@ def update_dataset_sample(
     if "label_guideline_version" in payload.model_fields_set:
         sample.label_guideline_version = payload.label_guideline_version
 
-    duplicate = session.scalar(
+    existing_samples = session.scalars(
         select(DatasetSample).where(
             DatasetSample.dataset_id == dataset.id,
             DatasetSample.id != sample.id,
-            DatasetSample.text_fingerprint == sample.text_fingerprint,
         )
-    )
-    if duplicate is not None:
-        raise HTTPException(status_code=409, detail="This text already exists in the dataset.")
+    ).all()
+    if any(
+        _fingerprint(item.text_content) == _fingerprint(sample.text_content)
+        for item in existing_samples
+    ):
+        raise HTTPException(status_code=409, detail="This normalized text already exists in the dataset.")
     _validate_sample_source(
         session,
         source_report_id=sample.source_report_id,
