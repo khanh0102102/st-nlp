@@ -45,7 +45,7 @@ FROM base AS ml-training
 
 COPY backend/requirements-ml.txt ./requirements-ml.txt
 COPY backend/requirements-neural.txt ./requirements-neural.txt
-RUN python -m pip install --no-cache-dir -r requirements-ml.txt -r requirements-neural.txt
+RUN python -m pip install --no-cache-dir -r requirements-ml.txt \\\n    && python -m pip install --no-cache-dir -r requirements-neural.txt
 COPY backend/alembic.ini ./alembic.ini
 COPY backend/migrations ./migrations
 COPY --chown=stnlp:stnlp backend/app ./app
