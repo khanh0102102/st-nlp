@@ -202,3 +202,10 @@ Lộ trình được chia theo đầu ra có thể kiểm tra, không chỉ theo
 ## 5. Theo dõi tiến độ
 
 Mỗi hạng mục backlog cần có: ID, mô tả, ưu tiên, phụ thuộc, người phụ trách, acceptance criteria, trạng thái, PR/commit và test evidence. Không đánh dấu Done chỉ vì code đã được viết.
+
+
+## 6. Baseline đầu vào cho triển khai
+
+- Danh sách 11 tên và thứ tự đã được chủ dự án cung cấp; [CLASSIFICATION_SPECIFICATION](../01_REQUIREMENTS/CLASSIFICATION_SPECIFICATION.md) là nguồn chuẩn dùng chung.
+- Baseline thiết kế dữ liệu gồm đúng 12 bảng trong [DATABASE_DESIGN](../03_DATABASE/DATABASE_DESIGN.md). Trước khi viết migration phải chốt Database Engine, kiểu dữ liệu cụ thể, status lifecycle và audit sink.
+- Không đánh dấu Database Foundation VERIFIED chỉ vì tài liệu đã có ERD; chỉ VERIFIED sau khi SQLAlchemy models, migration, seed 11 danh mục và Docker tests chạy thành công.
