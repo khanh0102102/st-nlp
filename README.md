@@ -5,6 +5,20 @@ ST-NLP là hệ thống tiếp nhận, quản lý và hỗ trợ phân loại ph
 
 Repository này là nguồn quản lý tập trung cho tài liệu, mã nguồn, kiểm thử và cấu hình triển khai của dự án. Hiện repository đang ở giai đoạn khởi tạo tài liệu; chưa có bản phát hành phần mềm chạy được.
 
+## Quy tắc chạy dự án: Docker-only
+
+ST-NLP được định hướng để người dùng chỉ cần Git và Docker Desktop/Engine + Docker Compose trên máy cá nhân. Không yêu cầu cài Python, Node.js, database server hoặc thư viện dự án trực tiếp trên host. Mọi dependency, migration, test và worker chạy trong container.
+
+Khi triển khai hoàn chỉnh, quy trình mục tiêu là:
+
+```bash
+git clone https://github.com/khanh0102102/st-nlp.git
+cd st-nlp
+docker compose up --build -d
+```
+
+**Lưu ý:** docker-compose.yml hiện vẫn là scaffold chưa có service, nên lệnh trên chưa khởi chạy được ứng dụng ở trạng thái hiện tại. Các credential bên ngoài như Google OAuth có thể cần cấu hình riêng; không commit secret vào Git.
+
 ## Bắt đầu từ đâu?
 
 1. Đọc [AGENTS.md](AGENTS.md) để hiểu quy tắc làm việc dành cho AI coding agents.
