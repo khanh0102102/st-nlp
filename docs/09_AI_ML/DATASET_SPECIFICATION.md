@@ -27,25 +27,40 @@ Mỗi sample cần provenance: nguồn, thời điểm thu thập, phương th�
 
 ## 4. Danh mục 11 lớp
 
-ST-NLP có 11 nhóm phân loại. Tên, mã, mô tả, inclusion/exclusion criteria và ví dụ chuẩn phải lấy từ Classification Specification được chủ dự án duyệt.
+Nguồn chuẩn duy nhất của label schema là [CLASSIFICATION_SPECIFICATION](../01_REQUIREMENTS/CLASSIFICATION_SPECIFICATION.md). Bài toán baseline là single-label, đúng 11 lớp và dùng category_code ổn định:
 
-Không tự phát minh tên lớp. Trước khi có danh mục chính thức:
-- Dùng category_code ổn định do chủ dự án cung cấp.
-- Không đưa label text tự đặt vào dataset production.
-- Ghi phiên bản label schema.
-- Mọi thay đổi mapping phải có kế hoạch migration/relabel.
+| STT | category_code | Tên hiển thị |
+|---:|---|---|
+| 1 | ROAD_BRIDGE_INFRA_DAMAGE | Đường/Cầu/Hạ tầng hư hỏng |
+| 2 | POWER_LIGHTING | Điện lực/Chiếu sáng |
+| 3 | DRAINAGE_SEWER | Cống/Hố ga/Thoát nước |
+| 4 | SIDEWALK_ROADWAY | Vỉa hè/Lòng đường |
+| 5 | TREES_OBSTRUCTIONS | Cây xanh/Vật cản |
+| 6 | TRAFFIC_SIGNS | Biển báo |
+| 7 | TRAFFIC_ORGANIZATION | Tổ chức giao thông |
+| 8 | TRAFFIC_LIGHTS | Đèn tín hiệu |
+| 9 | WASTE_ENVIRONMENT | Rác thải/Vệ sinh môi trường |
+| 10 | OBSTRUCTIVE_PARKING | Đỗ xe cản trở |
+| 11 | OTHER | Khác |
+
+Quy tắc:
+- Không tự tạo, xóa hoặc đổi mã lớp. Mọi thay đổi label schema cần được duyệt và version hóa.
+- OTHER là class hợp lệ cho phản ánh rõ nghĩa nhưng không thuộc 10 nhóm còn lại.
+- UNLABELED, NEEDS_REVIEW và INSUFFICIENT_INFORMATION là labeling_status, không phải category. Sample chưa có nhãn có category_id NULL khi status cho phép.
+- Ranh giới lớp dễ giao nhau phải theo guideline ở Classification Specification; trường hợp không thể xác định chắc chắn cần adjudication, không ép nhãn.
+- Ảnh và tọa độ không mặc định là feature của text classifier baseline.
 
 ## 5. Cấu trúc sample logic
 
 Một sample tối thiểu nên có:
 - sample_id ổn định.
 - text gốc hoặc reference an toàn đến text.
-- category_code hoặc trạng thái unlabeled/needs_review.
-- dataset_id/version.
+- category_id FK đến incident_categories hoặc labeling_status (UNLABELED/NEEDS_REVIEW/INSUFFICIENT_INFORMATION) nếu chưa có nhãn.
+- dataset_id, trong đó mỗi hàng datasets đại diện một version cụ thể.
 - source/provenance.
 - labeling_status.
 - created_at/updated_at.
-- split (train/validation/test) nếu quản lý split ở sample.
+- split (TRAIN/VALIDATION/TEST) nếu quản lý split ở sample.
 - duplicate/fingerprint metadata nếu phù hợp.
 
 Tên field vật lý phụ thuộc Data Dictionary đã duyệt.
@@ -118,3 +133,10 @@ Dataset chỉ được đánh dấu Ready khi:
 - Provenance/quyền sử dụng được xác nhận.
 - Split đã được tạo và lưu.
 - Các cảnh báo được chấp thuận hoặc xử lý.
+
+
+## 12. Mapping với Database 12 bảng
+
+Mỗi sample được lưu trong dataset_samples và liên kết datasets.id (một hàng là một version), incident_categories.id nếu đã có nhãn, source_report_id/source_review_id nếu lấy từ phản ánh đã được phép tái sử dụng. Nội dung text_content là snapshot có provenance và phải tuân thủ privacy/retention. Version FROZEN không được sửa; thay đổi tạo version datasets mới.
+
+Training_runs phải tham chiếu đúng datasets.id của version đã validate/freeze theo policy. Lưu label_schema_version, split config, seed và class distribution để tái lập.
