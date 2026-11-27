@@ -129,3 +129,18 @@ Mỗi trạng thái cần điều kiện vào/ra, actor được phép và audit
 ## 8. SLA và thông báo
 
 SLA, thời gian xử lý, thông báo email/push/SMS và cơ chế escalations hiện TBD. Không xây dựng thông báo ngoài phạm vi trước khi có yêu cầu.
+
+
+## 9. Danh mục và điểm lưu dữ liệu
+
+Phân loại sử dụng đúng 11 nhóm trong [CLASSIFICATION_SPECIFICATION](CLASSIFICATION_SPECIFICATION.md). Đây là bài toán single-label. Citizen không phải chọn nhãn khi gửi; AI tạo nhãn đề xuất; cán bộ xác nhận hoặc chỉnh sửa. OTHER không phải nhãn dự phòng cho input thiếu thông tin hoặc lỗi inference.
+
+Mapping lưu trữ:
+- Tạo phản ánh: users → reports → report_attachments; reports.raw_content không bị thay đổi.
+- Tiền xử lý: mỗi lần chạy tạo preprocessing_runs liên kết report và pipeline version.
+- Inference: predictions liên kết report, preprocessing_runs, model_versions và incident_categories; lỗi inference không làm mất report.
+- Review: prediction_reviews lưu actor, nhãn trước/sau, action và timestamp; reports.final_category_id cập nhật trong cùng transaction.
+- Dataset: datasets lưu một hàng cho mỗi version; dataset_samples liên kết dataset version, category, split và provenance.
+- Training: training_runs tham chiếu một dataset version; training_metrics lưu metric tổng thể hoặc theo category/split; model_versions trỏ training run nguồn và artifact.
+
+Audit tổng quát phải phát ra audit sink append-only ngoài 12 bảng Database; prediction_reviews là lịch sử kiểm duyệt nghiệp vụ, không thay thế toàn bộ audit. Các trạng thái và provider chưa chốt tiếp tục được ghi TBD.
