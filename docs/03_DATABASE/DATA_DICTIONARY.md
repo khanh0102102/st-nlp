@@ -2,20 +2,20 @@
 
 | Thuộc tính | Giá trị |
 |---|---|
-| Phiên bản | 2.0 |
-| Trạng thái | Proposed physical data dictionary — 12 bảng |
+| Phiên bản | 2.1 |
+| Trạng thái | PostgreSQL 18.x physical mapping — 12 business tables; CI verified |
 | Kiểu ORM | SQLAlchemy |
-| Database Engine | TBD |
+| Database Engine | PostgreSQL 18.x (Docker Compose) |
 | Danh mục | 11 lớp trong CLASSIFICATION_SPECIFICATION.md |
 
 ## 1. Quy ước
 
-- Kiểu dữ liệu dưới đây là logical SQL types; cần ánh xạ sang Database Engine được duyệt.
-- UUID được khuyến nghị cho khóa chính/khóa ngoại; có thể đổi theo quyết định stack trước khi viết migration.
+- Các cột được ánh xạ sang PostgreSQL physical types trong SQLAlchemy models/Alembic; bảng này mô tả ý nghĩa và constraints.
+- Khóa chính/khóa ngoại dùng UUID; timestamp timezone-aware UTC; metadata cấu trúc dùng JSONB khi phù hợp.
 - Timestamp là timezone-aware và lưu UTC.
 - Nullable = Có nghĩa là có thể NULL theo điều kiện nghiệp vụ.
 - JSON/JSONB chỉ dùng cho cấu hình/metadata có cấu trúc; không thay thế quan hệ cần JOIN/FK.
-- Mã trạng thái và enum là code ổn định; tập giá trị TBD phải được chốt trước khi implementation.
+- Category/status codes là giá trị ổn định; 11 categories đã seed idempotent và xác minh trong PostgreSQL CI.
 - Mọi bảng có id, created_at/updated_at theo nhu cầu; không bắt buộc mọi bảng đều có cả hai.
 - Raw content, ảnh và processed text được xếp Confidential; access phải có authorization.
 
@@ -270,4 +270,4 @@ Không thêm audit_logs để giữ đúng 12 bảng. Audit tổng quát đi qua
 
 ## 5. Thông tin còn TBD
 
-Database engine, SQL type mapping, UUID implementation, auth cán bộ, role policy chi tiết, status sets, location CRS, storage provider, audit sink provider, file retention, privacy policy, threshold confidence, dataset split ratio và model activation policy cần được chốt trước khi tạo migration production.
+Production DB hosting/backup, staff auth/MFA, status transition policy toàn hệ thống, CRS production, storage/audit providers, retention/privacy, confidence threshold và dataset approval/split policy vẫn phải chốt trước production.

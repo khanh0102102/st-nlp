@@ -2,8 +2,8 @@
 
 | Thuộc tính | Giá trị |
 |---|---|
-| Phiên bản | 0.3 |
-| Cập nhật | 2026-11-27 |
+| Phiên bản | 0.4 |
+| Cập nhật | 2026-11-28 |
 | Mục đích | Ghi nhận baseline, lựa chọn được ủy quyền và các mục còn mở |
 
 ## 1. Baseline đã được xác lập
@@ -33,7 +33,14 @@ Các lựa chọn dưới đây được chốt để bắt đầu local impleme
 | DEC-014 | Authentication libraries | Authlib 1.9.10 for OIDC, pwdlib[argon2] 0.4.2 for Argon2id, itsdangerous 2.2.0 for signed sessions/CSRF | ADR-0003 | ACCEPTED FOR LOCAL IMPLEMENTATION |
 | DEC-015 | ML runtime/training boundary | Keep API runtime free of heavy ML dependencies; install classical NLP dependencies and CPU PyTorch only in separate ML training/test image targets. Make training/test opt-in Compose profiles and share model artifact volume with API. | ADR-0005 | ACCEPTED FOR LOCAL IMPLEMENTATION |
 
-## 3. Trade-offs and implementation controls
+## 3. Milestone 1 implementation decisions
+
+| ID | Chủ đề | Quyết định | Bằng chứng | Trạng thái |
+|---|---|---|---|---|
+| DEC-016 | Report submission degradation | Persist report independently of ML availability; unavailable/malformed inference becomes INFERENCE_FAILED with category/confidence NULL; raw_content unchanged | reports.py, PostgreSQL/endpoint tests, CI #26 | ACCEPTED |
+| DEC-017 | Review/database invariant | Append review first; transaction-local `stnlp.current_review_id` binds final_category update to exact review; PostgreSQL actor/consistency triggers and append-only protection | Alembic 0002, PostgreSQL tests, CI #26 | ACCEPTED |
+| DEC-018 | Single active model | Partial unique index allows one global ACTIVE; advisory transaction lock serializes activation/rollback; retire previous model before promoting target | Model API, concurrency/rollback tests, CI #26 | ACCEPTED FOR LOCAL REGISTRY |
+## 4. Trade-offs and implementation controls
 
 | ID | Chủ đề | Quy tắc |
 |---|---|---|
@@ -43,7 +50,7 @@ Các lựa chọn dưới đây được chốt để bắt đầu local impleme
 | PROP-004 | Confidence | Raw score/probability/calibration must retain distinct types |
 | PROP-005 | ML dependencies | API runtime stays lightweight; CPU PyTorch is installed from its CPU wheel index only in ML training/test images |
 
-## 4. Quyết định vẫn mở cho production hoặc dữ liệu thật
+## 5. Quyết định vẫn mở cho production hoặc dữ liệu thật
 
 | ID | Nội dung còn mở | Khi nào phải chốt |
 |---|---|---|
@@ -57,7 +64,7 @@ Các lựa chọn dưới đây được chốt để bắt đầu local impleme
 | TBD-018 | Staff MFA and production identity/provisioning policy | Before staff access in production |
 | TBD-019 | Dataset-driven calibration and confidence threshold/acceptance target | Before automation can reduce human review |
 
-## 5. Quy tắc quản lý quyết định
+## 6. Quy tắc quản lý quyết định
 
 - Các DEC-007..015 được chấp nhận cho initial/local implementation theo quyền triển khai được chủ dự án giao; không diễn giải thành production approval.
 - Các TBD ở mục 4 không được tự động chốt bằng cách đặt giá trị mặc định rồi dùng trên production.

@@ -2,9 +2,9 @@
 
 | Thuộc tính | Giá trị |
 |---|---|
-| Phiên bản | 1.0 |
-| Trạng thái | Initial test inventory |
-| Quy ước | Expected result là yêu cầu; kết quả thực tế được ghi khi chạy |
+| Phiên bản | 1.1 |
+| Trạng thái | Test inventory with Milestone 1 regression coverage and CI execution evidence |
+| Quy ước | Expected results are test specifications; actual execution evidence is recorded in section 15 |
 
 ## 1. Authentication và Authorization
 
@@ -63,6 +63,10 @@
 | TC-REV-005 | Hai cán bộ sửa cùng lúc | Conflict được phát hiện, không ghi đè âm thầm |
 | TC-REV-006 | Mở review history | Hiển thị actor/time/previous/new label theo quyền |
 | TC-REV-007 | Cập nhật status không hợp lệ | Backend từ chối transition |
+| TC-REV-008 | Đổi final_category_id không có marker review hợp lệ | PostgreSQL từ chối UPDATE |
+| TC-REV-009 | Chỉ INSERT review nhưng không đổi final_category_id cùng transaction | Deferred trigger từ chối COMMIT |
+| TC-REV-010 | Citizen/inactive user INSERT prediction_review trực tiếp | PostgreSQL từ chối |
+| TC-REV-011 | UPDATE/DELETE prediction_review history | PostgreSQL từ chối; history row giữ nguyên |
 
 ## 5. Dashboard và Map
 
@@ -74,6 +78,11 @@
 | TC-MAP-001 | Report có tọa độ hợp lệ | Marker xuất hiện đúng vị trí |
 | TC-MAP-002 | Report không có tọa độ | Không tạo marker giả |
 | TC-MAP-003 | Người không có quyền xem chi tiết marker | Không lộ PII |
+| TC-MODEL-004 | Tạo hai model ACTIVE trực tiếp PostgreSQL | Partial unique index từ chối |
+| TC-MODEL-005 | Hai request activate đồng thời | Advisory lock + unique index giữ đúng một ACTIVE; model còn lại RETIRED |
+| TC-MODEL-006 | Rollback model đã approved | Model trước ACTIVE, model hiện tại RETIRED; approval metadata và audit action giữ nguyên |
+| TC-DB-014 | Đếm business tables PostgreSQL | Chính xác 12 bảng; loại alembic_version kỹ thuật |
+| TC-DB-015 | Seed category catalog | Chính xác 11 category active theo sort_order 1..11 |
 
 ## 6. Dataset và Training
 
@@ -169,7 +178,11 @@ Khi thực thi, bổ sung: Actual Result, Pass/Fail/Blocked, Build/Commit, Teste
 | TC-REPORT-001 | Citizen gửi nội dung hợp lệ | Report được lưu raw_content nguyên bản; tạo preprocessing status SKIPPED và prediction INFERENCE_FAILED nếu chưa có active model |
 | TC-REPORT-002 | Citizen gửi nội dung trắng | API từ chối 422; không tạo report |
 | TC-REPORT-003 | Chỉ cung cấp latitude hoặc longitude | API từ chối 422 |
-| TC-REPORT-005 | Gửi phản ánh khi ML_SERVICE_URL không cấu hình | API vẫn trả 201, lưu nội dung gốc nguyên văn, ghi prediction INFERENCE_FAILED không có category/score giả và audit event |
+| TC-REPORT-005 | Gửi phản ánh khi ML_SERVICE_URL không cấu hình | API trả 201, lưu nội dung gốc nguyên văn, prediction INFERENCE_FAILED không category/score giả và audit event |
+| TC-REPORT-006 | ML service cấu hình nhưng trả HTTP 503 | Report vẫn trả 201; prediction failure, không category/confidence |
+| TC-REPORT-007 | ML service trả HTTP 200 nhưng JSON sai schema | Report vẫn lưu; không tạo successful prediction giả |
+| TC-REPORT-008 | Raw text whitespace, newline, tiếng Việt NFC/NFD | Response và DB giữ nguyên chuỗi người gửi |
+| TC-REPORT-009 | UPDATE reports.raw_content trực tiếp bằng SQL | PostgreSQL trigger từ chối; nội dung gốc giữ nguyên |
 | TC-REPORT-004 | Citizen đọc report người khác | Trả 404, không tiết lộ report tồn tại |
 | TC-UPLOAD-001 | Upload JPEG/PNG/WebP hợp lệ | Xác minh signature, lưu private volume và metadata |
 | TC-UPLOAD-002 | File giả ảnh/đổi MIME header | Từ chối 415 |
@@ -186,3 +199,15 @@ Khi thực thi, bổ sung: Actual Result, Pass/Fail/Blocked, Build/Commit, Teste
 | TC-WORKFLOW-004 | ADMIN reopen RESOLVED -> IN_PROGRESS | Cho phép |
 | TC-DASH-001 | Dashboard summary/category distribution | Giá trị truy vấn PostgreSQL; trả đủ 11 danh mục kể cả danh mục 0 report |
 | TC-MAP-001 | Map report filtering | Chỉ trả report có đủ latitude/longitude và áp dụng filter hợp lệ |
+
+
+## 15. Milestone 1 — Docker CI execution evidence
+
+| CI run | Code commit | Backend/PostgreSQL | Neural | Result |
+|---|---|---:|---:|---|
+| [#25](https://github.com/khanh0102102/st-nlp/actions/runs/46146018818) | `917c887745a7f02a49d7b403c1959b30d8c79a12` | 60 passed, 1 skipped | 8 passed | SUCCESS |
+| [#26](https://github.com/khanh0102102/st-nlp/actions/runs/46146303002) | `e89f9287ac07e83094eda0aa3f7cc65b9ec15963` | **61 passed, 1 skipped** | **8 passed** | **SUCCESS** |
+
+Run #26 also verified Compose config/build, PostgreSQL migration upgrade/downgrade/re-upgrade, exact 11-category seed and 12 business-table count, model rollback, trainer CLI smoke, app startup and frontend/API health. CI cleanup operates only on ephemeral GitHub runner volumes and does not affect developer local Docker volumes.
+
+Implemented regression sources include `backend/tests/test_report_submission.py`, `backend/tests/test_report_review_integrity.py`, `backend/tests/test_model_registry_concurrency.py` and `backend/tests/test_postgres_schema_integrity.py`. Test IDs are inventory mappings; PASS claims above refer to actual GitHub Actions output.

@@ -2,24 +2,24 @@
 
 | Thuộc tính | Giá trị |
 |---|---|
-| Phiên bản | 1.1 |
+| Phiên bản | 1.2 |
 | Trạng thái | Local Docker foundation — CI verified; production deployment chưa sẵn sàng |
 | Orchestration | Docker Compose |
 
 ## 1. Phạm vi và trạng thái đã xác minh
 
-Repository có Docker Compose stack gồm PostgreSQL 18.7, FastAPI, React/Vite build được phục vụ bởi Nginx. CI run #17 trên code commit 58b6acf5890c416b9d55812afdacf6739d74c560 đã xác minh:
+Repository có Docker Compose stack gồm PostgreSQL, FastAPI, React/Vite build được phục vụ bởi Nginx. CI run #26 trên code commit `e89f9287ac07e83094eda0aa3f7cc65b9ec15963` đã xác minh:
 
 - docker compose config --quiet và build các image app/test.
-- Alembic migration trên PostgreSQL mới.
-- Seed/verify chính xác 11 danh mục.
-- 37 backend tests passed, 1 test skip trong API runtime image.
-- 8 CNN/LSTM neural component tests passed trong CPU ML test image.
-- DB-backed NB/SVM training integration trên dataset tổng hợp: TrainingRun SUCCEEDED, 120 TrainingMetric rows, ModelVersion, SHA-256 artifact và artifact reload đều được kiểm tra.
+- Alembic fresh migration, `0001 -> 0002`, downgrade `0002 -> 0001`, re-upgrade và seed đúng 11 danh mục.
+- PostgreSQL schema test xác nhận đúng 12 business tables.
+- **61 backend tests passed, 1 skipped** trong API runtime image.
+- **8 neural component tests passed** trong CPU ML test image.
+- Review/final-category DB guard, raw_content immutability, Model ACTIVE uniqueness, concurrent activation và rollback lifecycle tests.
 - ML trainer CLI --help chạy thành công.
 - Khởi động stack và kiểm tra frontend/API liveness/readiness.
 
-CI không chứng minh Google OAuth với tài khoản thật, frontend portal đầy đủ, model quality trên dataset thật hoặc production readiness. DB-backed training test chỉ xác minh mechanics bằng synthetic CI samples.
+CI không chứng minh Google OAuth với tài khoản thật, Citizen/Admin portals đầy đủ, authenticated inference service, model quality trên dataset thật hoặc production readiness. DB-backed training test chỉ xác minh mechanics bằng synthetic CI samples. Xem [run #26](https://github.com/khanh0102102/st-nlp/actions/runs/46146303002).
 
 ## 2. Branch hiện tại
 

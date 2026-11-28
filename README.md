@@ -6,7 +6,7 @@ ST-NLP là hệ thống hỗ trợ tiếp nhận phản ánh giao thông và h�
 
 - Branch đang chứa implementation đã kiểm thử: feature/project-foundation.
 - main chưa được cập nhật các commit triển khai này; không dùng lệnh clone mặc định nếu cần lấy phiên bản đang phát triển.
-- CI run #17 đã xác minh Docker build, PostgreSQL migration/seed, 37 backend tests, 8 neural tests trong CPU image, DB-backed NB/SVM training integration, trainer CLI smoke test và health checks.
+- CI run #26 ([result](https://github.com/khanh0102102/st-nlp/actions/runs/46146303002)) xác minh Docker build, PostgreSQL migration upgrade/downgrade/re-upgrade, đúng 11 categories/12 business tables, 61 backend tests passed + 1 skipped, 8 neural tests passed, model activate/rollback concurrency, trainer CLI smoke và health checks.
 - Đây là local development foundation, chưa phải release hoàn chỉnh hoặc production-ready.
 
 ## Local development (Docker-only)
@@ -42,7 +42,7 @@ Huấn luyện yêu cầu dataset đã đóng băng, đủ TRAIN/VALIDATION/TEST
 
 ## Phạm vi hiện tại và giới hạn
 
-- Database implementation giữ đúng 12 bảng nghiệp vụ và seed đúng 11 danh mục.
+- Database implementation giữ đúng 12 bảng nghiệp vụ, seed đúng 11 danh mục; critical raw_content/review/model-registry invariants được bảo vệ ở PostgreSQL.
 - Backend có nền tảng auth, reports, review, dashboard, dataset và model-registry APIs; các luồng nghiệp vụ vẫn đang được hoàn thiện.
 - NLP/ML core đã có Vietnamese preprocessing, metrics, TF-IDF + Naive Bayes/Linear SVM, CNN 1D và BiLSTM components.
 - Chưa có inference service được xác thực để nạp active model và xử lý prediction end-to-end. Khi chưa có model, hệ thống không tự tạo nhãn AI giả.

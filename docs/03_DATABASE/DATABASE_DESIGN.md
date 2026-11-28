@@ -2,16 +2,16 @@
 
 | Thuộc tính | Giá trị |
 |---|---|
-| Phiên bản | 2.0 |
-| Trạng thái | Proposed physical baseline — 12 bảng theo đề xuất của chủ dự án |
+| Phiên bản | 2.1 |
+| Trạng thái | Implemented local PostgreSQL physical baseline — CI verified |
 | ORM định hướng | SQLAlchemy |
-| Database engine | TBD; PostgreSQL là ứng viên cần đánh giá |
+| Database engine | PostgreSQL 18.x (Docker Compose); SQLAlchemy + Alembic |
 | Số bảng nghiệp vụ chính | Chính xác 12 |
 | Danh mục phân loại | 11 danh mục theo CLASSIFICATION_SPECIFICATION.md |
 
 ## 1. Mục tiêu và phạm vi
 
-Thiết kế này cụ thể hóa cấu trúc 12 bảng do chủ dự án đề xuất cho ba nhóm nghiệp vụ: quản lý phản ánh, NLP/AI và quản lý dữ liệu/thực nghiệm ML. Đây là **đặc tả schema đề xuất để triển khai**, chưa phải schema đã tồn tại trong repository: backend, SQLAlchemy model và migration chưa được tạo ở thời điểm cập nhật.
+Thiết kế này cụ thể hóa cấu trúc 12 bảng do chủ dự án đề xuất cho ba nhóm nghiệp vụ: quản lý phản ánh, NLP/AI và quản lý dữ liệu/thực nghiệm ML. Schema được triển khai trong SQLAlchemy models và Alembic migrations (0001_initial_schema, 0002_integrity_guards) trên feature branch; Docker CI migrate PostgreSQL mới, upgrade/downgrade/re-upgrade và seed. `alembic_version` là bảng kỹ thuật, không tính vào 12 business tables.
 
 Nguồn chuẩn về nhãn là [CLASSIFICATION_SPECIFICATION](../01_REQUIREMENTS/CLASSIFICATION_SPECIFICATION.md). Tên và thứ tự 11 danh mục được giữ nguyên theo danh sách chủ dự án; các category_code tiếng Anh là mã kỹ thuật được chuẩn hóa trong tài liệu đó.
 
@@ -47,7 +47,7 @@ Nguồn chuẩn về nhãn là [CLASSIFICATION_SPECIFICATION](../01_REQUIREMENTS
 
 ## 4. Thiết kế từng bảng
 
-Kiểu dữ liệu dưới đây là kiểu logic đề xuất; cần ánh xạ sang SQL dialect sau khi chốt Database Engine.
+Kiểu vật lý hiện được ánh xạ trong SQLAlchemy models/Alembic trên PostgreSQL 18.x. Danh sách 12 bảng nghiệp vụ không bao gồm bảng kỹ thuật alembic_version.
 
 ### 4.1. users
 
@@ -227,6 +227,13 @@ Hỗ trợ Accuracy, Precision, Recall, Macro F1, Weighted F1 và F1/Precision/R
 - Timestamp lưu UTC.
 - Trạng thái DB dùng code ổn định, có validation và transition ở Backend.
 
+### 6.1. Invariants đã được bảo vệ và kiểm chứng ở PostgreSQL
+
+- reports.raw_content bất biến ở DB: UPDATE bị trigger từ chối; API chỉ trim để validate nội dung rỗng, không persist chuỗi đã trim.
+- prediction_reviews append-only: UPDATE/DELETE bị từ chối. INSERT chỉ hợp lệ với user ACTIVE có RECEIVER hoặc ADMIN.
+- Khi đổi reports.final_category_id, transaction phải append đúng prediction_reviews row; marker transaction-local stnlp.current_review_id trỏ tới review cùng report/category. Deferred trigger từ chối review-only write.
+- Activation/rollback dùng PostgreSQL advisory transaction lock; partial unique index chỉ cho một model_status ACTIVE. API flush retirement trước khi promote target.
+- Các invariant trên có integration tests chạy PostgreSQL Docker; không có nghĩa mọi invariant của cả 12 bảng đã được exhaustive-tested.
 ## 7. Index đề xuất
 
 - users: unique auth_provider + provider_subject khi có; normalized email index theo policy.
@@ -262,8 +269,8 @@ Nếu chủ dự án yêu cầu audit phải truy vấn trực tiếp bằng SQL
 
 ## 10. Migration, seed và Docker-only
 
-- ORM định hướng SQLAlchemy; công cụ migration dự kiến Alembic, chờ stack approval.
-- Migration/seed/test chạy bên trong Docker container, không cài Python/DB client trên host.
+- ORM: SQLAlchemy; migration: Alembic; PostgreSQL 18.x trong Docker Compose.
+- Migration/seed/test chạy trong Docker; run #26 xác minh fresh migration, upgrade 0001→0002, downgrade 0002→0001, upgrade lại và seed 11 categories.
 - Seed catalog idempotent: đúng 11 category theo CLASSIFICATION_SPECIFICATION.
 - Kiểm thử trên DB rỗng và đường nâng cấp được hỗ trợ.
 - Không sửa migration đã chạy ở môi trường chia sẻ; thêm migration mới.
@@ -274,14 +281,14 @@ Nếu chủ dự án yêu cầu audit phải truy vấn trực tiếp bằng SQL
 
 - Create report: report row và attachment metadata reference được phối hợp; upload storage cần compensation/cleanup nếu không thể atomic với DB.
 - Create prediction: lưu preprocessing run và prediction; inference failure không rollback report.
-- Create review: append prediction_reviews + update reports.final_category_id trong một transaction; audit sink phát event theo cơ chế outbox/retry đã chọn.
+- Create review: append prediction_reviews, set transaction-local marker, update reports.final_category_id và commit cùng transaction; lỗi rollback. PostgreSQL trigger kiểm tra actor và cặp write.
 - Freeze dataset: validate + đóng băng version; không cho sửa samples sau freeze.
 - Training: run/metrics cập nhật theo run ID, không giữ transaction dài.
-- Activate model: thao tác atomic theo deployment target, phát audit event, có rollback.
+- Activate/rollback model: advisory transaction lock + partial unique index giữ tối đa một ACTIVE; history và approval metadata được giữ.
 
 ## 12. Các quyết định vẫn TBD
 
-- Database engine/version, UUID implementation và extension địa lý.
+- Production DB hosting/backup topology và extension địa lý (local PostgreSQL/type mapping đã triển khai).
 - Column lengths, precision, timezone SQL type và naming constraint cụ thể theo engine.
 - Cách đăng nhập cán bộ và policy MFA.
 - Cơ chế upload/storage provider và retention file.
@@ -289,4 +296,4 @@ Nếu chủ dự án yêu cầu audit phải truy vấn trực tiếp bằng SQL
 - Threshold confidence và semantics/calibration.
 - Audit sink production, retention và tính chống sửa/xóa.
 - Dataset privacy, split ratio, source approval và deletion propagation.
-- Model deployment target, artifact storage và policy single-active.
+- Production model deployment target và artifact storage; local registry policy là một global ACTIVE model.

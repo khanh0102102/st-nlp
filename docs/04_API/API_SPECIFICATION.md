@@ -2,14 +2,14 @@
 
 | Thuộc tính | Giá trị |
 |---|---|
-| Phiên bản | 1.0 |
-| Trạng thái | Proposed Contract — cần chốt cùng Backend |
+| Phiên bản | 1.1 |
+| Trạng thái | Baseline mixed contract — một phần endpoints đã triển khai; API tổng thể tiếp tục mở rộng |
 | API prefix đề xuất | /api/v1 |
 | Data format | JSON; multipart/form-data hoặc signed upload cho file |
 
 ## 1. Mục tiêu và nguyên tắc
 
-Tài liệu định nghĩa hợp đồng giao tiếp giữa Citizen Portal, Admin Portal và Backend. Danh sách route dưới đây là endpoint dự kiến để thiết kế; chưa phải cam kết rằng code đã triển khai. Khi API được chốt, phải bổ sung schema request/response đầy đủ, OpenAPI và ví dụ thực tế.
+Tài liệu định nghĩa hợp đồng giao tiếp giữa Citizen Portal, Admin Portal và Backend. Một phần route dưới đây đang có trong feature branch; đây không phải tuyên bố mọi route/workflow SRS đã hoàn tất. Schema/OpenAPI và authorization tiếp tục đồng bộ theo milestone.
 
 - API dùng version prefix.
 - HTTPS ngoài local.
@@ -225,8 +225,11 @@ Các route dưới đây đã được tạo trên feature branch; đây là hi�
 
 - Report luôn được lưu trước. Khi chưa có active ML model, hệ thống ghi một preprocessing run SKIPPED và prediction `INFERENCE_FAILED` với `NO_ACTIVE_MODEL`; không tự gán `OTHER`.
 - `reports.raw_content` không bị sửa bởi preprocessing.
-- Review insert và update `reports.final_category_id` dùng cùng SQLAlchemy session/transaction.
-- Prediction/review rows được DB trigger bảo vệ append-only.
+- Review insert/flush, transaction-local marker và update `reports.final_category_id` dùng cùng SQLAlchemy transaction; lỗi rollback. PostgreSQL trigger kiểm tra staff ACTIVE RECEIVER/ADMIN và consistency.
+- Prediction/review rows được DB trigger bảo vệ append-only; `reports.raw_content` không cho UPDATE. Model registry chỉ có một ACTIVE nhờ partial unique index/advisory lock.
+- Nếu ML_SERVICE_URL rỗng, service lỗi hoặc body sai hợp đồng, POST report vẫn trả 201 khi report đã lưu; prediction INFERENCE_FAILED và category/confidence NULL (không phải inference success).
+- PostgreSQL từ chối review do citizen/inactive user và update final_category_id thiếu review marker cùng transaction.
+- Activate/rollback giữ đúng một ACTIVE model và không xóa model version lịch sử.
 - Dashboard đếm dữ liệu PostgreSQL, không dùng số mẫu cố định.
 - Upload kiểm tra magic bytes, JPEG/PNG/WebP, tối đa 10 MiB/file và tối đa 5 file/report; binary lưu ở private local volume.
 

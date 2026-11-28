@@ -3,9 +3,9 @@
 | Thuộc tính | Giá trị |
 |---|---|
 | Phiên bản | 0.2 |
-| Cập nhật | 2026-11-27 |
-| Trạng thái | Proposed plan, bám Master Instruction và PROJECT_ROADMAP |
-| Baseline | main commit 39a937cb7474f6a8e09f2915140b7ba89c4708ac |
+| Cập nhật | 2026-11-28 |
+| Trạng thái | Execution plan — foundation and Milestone 1 verified by Docker CI; later phases remain in progress |
+| Baseline | main commit `a6f817e992e83332dec17148a9889aab324c0868`; work on feature/project-foundation |
 
 ## 1. Nguyên tắc triển khai
 
@@ -20,7 +20,7 @@
 ## 2. Mapping theo Master Instruction
 
 ### Phase 0 — Repository Audit & Requirement Baseline
-**Trạng thái:** IN_PROGRESS ở nhánh audit; audit cũ được cập nhật theo main mới.
+**Trạng thái:** DONE cho snapshot đã xác minh; main giữ nguyên `a6f817e`.
 
 Công việc:
 - Xác minh Git tree, main, PR và thay đổi chưa merge.
@@ -36,7 +36,7 @@ Acceptance:
 - Không chạy/ghi nhận test khi chưa có source.
 
 ### Phase 1 — Project Foundation
-**Phụ thuộc:** quyết định stack tối thiểu cho Docker service.
+**Trạng thái:** DONE cho local Docker foundation; production deployment chưa nghiệm thu.
 
 Công việc:
 - Chốt Frontend framework/language/package manager.
@@ -54,7 +54,7 @@ Acceptance:
 - Clean clone/build/start được chứng minh.
 
 ### Phase 2 — Database Foundation
-**Phụ thuộc:** Phase 1 và SQL schema decision.
+**Trạng thái:** DONE cho M1 database scope: 12 business tables, 11 categories, migration và critical DB guards.
 
 Công việc:
 - Tạo đúng 12 SQLAlchemy models theo DATABASE_DESIGN/ERD/Data Dictionary.
@@ -255,3 +255,18 @@ Mỗi work package phải cập nhật:
 - Còn thiếu gì.
 
 Trạng thái toàn dự án chỉ phản ánh kết quả đã quan sát; không ước lượng completion theo số file hoặc số dòng code.
+
+
+## 6. Milestone 1 — verified implementation scope
+
+**Code commit:** `e89f9287ac07e83094eda0aa3f7cc65b9ec15963`  
+**Docker CI:** [run #26](https://github.com/khanh0102102/st-nlp/actions/runs/46146303002), SUCCESS.
+
+- Fixed report capture fallback when ML URL is missing/unavailable or service response is malformed.
+- Preserve raw_content and enforce database immutability.
+- Enforce authorized review actor, review/final-category transaction pairing and append-only review history in PostgreSQL.
+- Enforce one globally ACTIVE model with partial unique index/advisory lock; test concurrent activate and rollback.
+- Fresh DB migration, upgrade/downgrade/re-upgrade, 11-category seed and exact 12 business tables verified.
+- CI: 61 backend passed, 1 skipped; 8 neural passed; trainer CLI, app startup and health PASS.
+
+M1 does not implement authenticated inference service, full Citizen/Admin portals, live Google OAuth validation, production audit/storage or real-data model quality evaluation.

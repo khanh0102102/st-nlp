@@ -1,47 +1,49 @@
 # IMPLEMENTATION STATUS — ST-NLP
 
-Ngày cập nhật: 2026-11-27
+Ngày cập nhật: 2026-11-28
 
 ## Repository và bằng chứng
 
 - Repository: https://github.com/khanh0102102/st-nlp
 - Base branch: main — chưa được thay đổi trong đợt triển khai này.
 - Working branch: feature/project-foundation.
-- Code snapshot đã được CI xác minh: 58b6acf5890c416b9d55812afdacf6739d74c560.
-- Branch compare sau commit code: ahead 20, behind 0 so với main.
+- Code snapshot đã được Docker CI xác minh: `e89f9287ac07e83094eda0aa3f7cc65b9ec15963`.
+- Branch compare snapshot trước commit tài liệu: feature/project-foundation ahead 28, behind 0 so với main.
 - Không tự tạo/merge PR; việc đưa feature vào main cần được chủ dự án duyệt.
 
 ### CI evidence
 
-GitHub Actions run #17 (46036493691), conclusion success, trên commit 58b6acf5890c416b9d55812afdacf6739d74c560.
+GitHub Actions run #26 (46146303002), conclusion success, trên commit `e89f9287ac07e83094eda0aa3f7cc65b9ec15963`.
 
 | Hạng mục | Kết quả | Ghi chú |
 |---|---|---|
-| Compose validation | PASS | docker compose config --quiet |
-| Docker builds | PASS | app, backend test và CPU ML test/training stages |
-| Fresh PostgreSQL migration | PASS | Alembic initial schema |
-| Seed danh mục | PASS | Xác minh đúng 11 categories |
-| Backend pytest | PASS | 37 passed, 1 skipped trong API runtime image |
-| Neural component tests | PASS | 8 passed trong image có CPU PyTorch |
-| DB-backed NB/SVM training integration | PASS | Synthetic frozen dataset; TrainingRun, 120 metrics, ModelVersion, checksum và artifact reload verified |
-| ML trainer CLI smoke | PASS | python -m app.ml.cli --help qua Compose profile |
-| Application startup | PASS | API và web khởi động |
-| Health checks | PASS | frontend /health, API /health/live và /health/ready |
+| Compose validation | PASS | Run #26: docker compose config --quiet |
+| Docker builds | PASS | App, backend test, CPU ML test và training images |
+| Fresh PostgreSQL migration | PASS | `0001 -> 0002` trên PostgreSQL Docker |
+| Upgrade/downgrade | PASS | `0002 -> 0001 -> 0002` |
+| Seed danh mục | PASS | Xác minh chính xác 11 category sau migration |
+| Backend pytest | PASS | **61 passed, 1 skipped** trong API runtime image |
+| Neural component tests | PASS | **8 passed** trong CPU ML test image |
+| Report/review DB integrity | PASS | TestClient + PostgreSQL; raw content, role guard, transaction pair và append-only review |
+| Model Registry | PASS | Unique ACTIVE index, concurrent activation và rollback lifecycle tests |
+| ML trainer CLI smoke | PASS | `python -m app.ml.cli --help` qua Compose profile |
+| Application startup | PASS | API và web khởi động trong Docker Compose |
+| Health checks | PASS | frontend `/health`, API `/health/live` và `/health/ready` |
 
-Test bị skip trong backend image là module phụ thuộc PyTorch; phần neural tương ứng được chạy riêng trong CPU ML test image và có 8 test pass. CI là kiểm thử foundation trên GitHub runner. DB-backed training test xác minh mechanics bằng synthetic samples, không phải đánh giá chất lượng mô hình. Chưa chứng minh training trên dataset thật hoặc Google OAuth với credentials thật.
+Test bị skip trong backend image là module phụ thuộc PyTorch; neural tests tương ứng chạy riêng trong CPU ML test image. Run #26 dùng GitHub Actions Docker runner; phiên môi trường này không có Docker CLI để chạy Docker local. DB-backed training integration dùng synthetic samples để xác minh mechanics, không đánh giá chất lượng mô hình trên dữ liệu thật. Google OAuth credentials thật chưa được xác minh.
 
 ## Trạng thái theo subsystem
 
 | Subsystem | Trạng thái | Bằng chứng / giới hạn |
 |---|---|---|
 | Docker/local foundation | DONE cho local CI baseline | Compose validation/build/start và health checks pass trong run #17; production deployment chưa nghiệm thu |
-| Database | DONE cho schema foundation | 12 SQLAlchemy business models, initial migration, integrity constraints/triggers; CI migrate database mới |
+| Database | DONE cho Milestone 1 scope | Đúng 12 business tables; migration 0001+0002; seed 11 categories; PostgreSQL guards cho raw_content/review và single ACTIVE model; upgrade/downgrade/re-upgrade CI PASS |
 | Category catalog | DONE | Đúng 11 category code và order; seed verified trong CI |
 | Backend core/auth | PARTIAL | Session/CSRF/role checks, staff login và Google OIDC flow có code; Google OAuth thật chưa xác minh |
 | Citizen APIs | PARTIAL | Profile/report/attachment foundations hiện có; full citizen workflow chưa nghiệm thu |
-| Admin APIs | PARTIAL | Report review/history, dashboard/map, dataset/model APIs hiện có; coverage authorization và workflow còn thiếu |
+| Admin APIs | PARTIAL | Report review/history và model registry có authorization/integrity tests; dashboard/map/dataset portal và full workflow chưa nghiệm thu |
 | Dataset management | PARTIAL | Dataset/sample CRUD, validation và freeze protections có nền tảng; chưa có dataset thật được cung cấp và duyệt |
-| Model registry | PARTIAL | Registry API/model version schema có; chưa có active model được đánh giá trên dữ liệu thật |
+| Model registry | DONE cho local lifecycle baseline | DB single-ACTIVE index, advisory-lock concurrency, approve/activate/rollback tests; chưa có model được đánh giá trên dữ liệu thật |
 | Vietnamese preprocessing | DONE ở mức module | NFC/lowercase/whitespace, Underthesea tokenizer, version metadata và fingerprint; tests pass |
 | Metrics | DONE ở mức module | Accuracy, macro/weighted precision-recall-F1, per-class support và confusion matrix; tests pass |
 | Classical NLP | DONE ở mức model component | TF-IDF word n-gram + MultinomialNB/LinearSVC, fit/predict parity và artifact save/load tests; chưa đánh giá chất lượng trên dataset thực |
@@ -52,6 +54,28 @@ Test bị skip trong backend image là module phụ thuộc PyTorch; phần neur
 | Full integration / E2E | NOT_STARTED | Chưa chứng minh trọn luồng citizen report → review → frozen dataset → training → active inference |
 | Production readiness | NOT_READY | OAuth, secrets, persistent storage, monitoring, backups, security review, NFR và deployment còn mở |
 
+## Milestone 1 — acceptance evidence
+
+Bằng chứng: GitHub Actions [run #26](https://github.com/khanh0102102/st-nlp/actions/runs/46146303002), code commit `e89f9287ac07e83094eda0aa3f7cc65b9ec15963`.
+
+| ID | Tiêu chí | Trạng thái | Bằng chứng / giới hạn |
+|---|---|---|---|
+| M1-01 | recorded luôn được khởi tạo | DONE | Audit event tính cả khi ML_SERVICE_URL rỗng; endpoint regression test |
+| M1-02 | Tạo report khi ML_SERVICE_URL rỗng | DONE | FastAPI TestClient + PostgreSQL trả 201 |
+| M1-03 | Không tạo prediction giả | DONE | INFERENCE_FAILED; category/confidence NULL khi service thiếu, unavailable hoặc body sai schema |
+| M1-04 | Regression report tests | DONE | Endpoint tests chạy trong backend Docker suite |
+| M1-05 | Giữ nguyên raw_content | DONE | Không trim trước persist; DB trigger từ chối UPDATE |
+| M1-06 | Test nguyên văn Unicode/raw text | DONE | Whitespace, newline, tiếng Việt NFC/NFD và DB immutability |
+| M1-07 | Review + final category cùng transaction | DONE | Insert/flush review, transaction-local marker, update report, commit/rollback |
+| M1-08 | Quyền review | DONE | API guard và PostgreSQL trigger chỉ chấp nhận ACTIVE RECEIVER/ADMIN |
+| M1-09 | DB enforce invariant | DONE trong phạm vi M1 | Review/final-category pair, append-only review, raw_content immutable; chưa exhaustive 12 bảng |
+| M1-10 | Activation concurrency/rollback | DONE | Partial unique index, advisory lock, concurrent activation và rollback tests |
+| M1-11 | Migration + seed 11 categories | DONE | PostgreSQL fresh/upgrade/downgrade/re-upgrade và seed PASS |
+| M1-12 | Giữ đúng 12 business tables | DONE | Schema test xác minh 12; alembic_version là bảng kỹ thuật |
+| M1-13 | Docker suite + health | DONE | 61 passed, 1 skipped; neural 8 passed; build, CLI, startup và health PASS |
+| M1-14 | Tài liệu theo bằng chứng | PARTIAL | Tài liệu được đồng bộ trong commit tiếp theo; CI trên snapshot tài liệu đang chờ |
+
+Milestone 1 tổng thể: **PARTIAL trong snapshot tài liệu này** cho đến khi CI chạy trên commit tài liệu hoàn tất. Không suy rộng sang Citizen/Admin Portal, OAuth thật, inference service hoặc chất lượng mô hình.
 ## ML implementation detail
 
 - Preprocessing version hiện tại: vi-nfc-lower-underthesea-v1.
@@ -92,6 +116,12 @@ Test bị skip trong backend image là module phụ thuộc PyTorch; phần neur
 | 9042291a8309fc984c858309c791d3d80bca615f | Thêm ADR-0005 về ML training/runtime boundary |
 | b2fb080a9c32724ae83d048269995d5b52605420 | Đồng bộ README, deployment, implementation status và AI/ML docs |
 | 58b6acf5890c416b9d55812afdacf6739d74c560 | DB integration tests cho NB/SVM training lifecycle; CI #17 pass |
+| c36d29a313b58e78314ff244071743d7af924f11 | Fix report audit/raw_content khi ML URL rỗng; CI #21 pass |
+| 6f656025117325afd71ef42a8c80e5290b65f5ba | Review DB guard, single-active index, advisory lock và Docker migration test |
+| 1a7859cb7dd49fe30ceb836c2cc417683b209a58 | Test report bằng TestClient/PostgreSQL, raw_content immutable và flush order |
+| a5922470d497ca12958af397533d59810ac4674e | Bind final_category update với review row bằng transaction-local marker |
+| 917c887745a7f02a49d7b403c1959b30d8c79a12 | Sửa PL/pgSQL delimiter; CI #25: 60 backend pass, 1 skip; 8 neural pass |
+| e89f9287ac07e83094eda0aa3f7cc65b9ec15963 | Model rollback lifecycle test; CI #26: 61 backend pass, 1 skip; 8 neural pass |
 
 Một số commit trung gian có CI fail do cấu hình dependency; lỗi đã được sửa ở các commit sau. Không dùng các commit trung gian đó làm release baseline.
 
