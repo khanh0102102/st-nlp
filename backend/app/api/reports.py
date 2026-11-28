@@ -214,8 +214,9 @@ def create_report(
             status_code=422,
             detail="Latitude and longitude must be provided together.",
         )
-    raw_content = payload.raw_content.strip()
-    if not raw_content:
+    # Validate whitespace without altering the citizen's submitted text.
+    raw_content = payload.raw_content
+    if not raw_content.strip():
         raise HTTPException(status_code=422, detail="Report content is required.")
 
     report = Report(
@@ -286,10 +287,14 @@ def create_report(
             logging.getLogger(__name__).info(
                 "ML service is not reachable; report was saved with an explicit INFERENCE_FAILED record."
             )
-    
-        recorded = _audit(
-        request, actor_id=user.id, action="report.submitted",
-        resource_type="report", resource_id=report.id,
+
+    # Audit every accepted report, including the normal no-ML-service path.
+    recorded = _audit(
+        request,
+        actor_id=user.id,
+        action="report.submitted",
+        resource_type="report",
+        resource_id=report.id,
         details={
             "status": report.status,
             "inference_status": prediction_payload["inference_status"],

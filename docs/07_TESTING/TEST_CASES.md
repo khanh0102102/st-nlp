@@ -169,6 +169,7 @@ Khi thực thi, bổ sung: Actual Result, Pass/Fail/Blocked, Build/Commit, Teste
 | TC-REPORT-001 | Citizen gửi nội dung hợp lệ | Report được lưu raw_content nguyên bản; tạo preprocessing status SKIPPED và prediction INFERENCE_FAILED nếu chưa có active model |
 | TC-REPORT-002 | Citizen gửi nội dung trắng | API từ chối 422; không tạo report |
 | TC-REPORT-003 | Chỉ cung cấp latitude hoặc longitude | API từ chối 422 |
+| TC-REPORT-005 | Gửi phản ánh khi ML_SERVICE_URL không cấu hình | API vẫn trả 201, lưu nội dung gốc nguyên văn, ghi prediction INFERENCE_FAILED không có category/score giả và audit event |
 | TC-REPORT-004 | Citizen đọc report người khác | Trả 404, không tiết lộ report tồn tại |
 | TC-UPLOAD-001 | Upload JPEG/PNG/WebP hợp lệ | Xác minh signature, lưu private volume và metadata |
 | TC-UPLOAD-002 | File giả ảnh/đổi MIME header | Từ chối 415 |
