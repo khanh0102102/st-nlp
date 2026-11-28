@@ -314,6 +314,12 @@ class ModelVersion(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
             name="model_status_allowed",
         ),
         Index("ix_model_versions_training_run", "training_run_id"),
+        Index(
+            "uq_model_versions_single_active",
+            "model_status",
+            unique=True,
+            postgresql_where=text("model_status = 'ACTIVE'"),
+        ),
     )
 
     model_family: Mapped[str] = mapped_column(String(40), nullable=False)
