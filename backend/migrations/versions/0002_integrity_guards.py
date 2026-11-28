@@ -46,7 +46,7 @@ def upgrade() -> None:
     # transaction; a transaction-local setting survives nested SQLAlchemy savepoints.
     op.execute("""
     CREATE FUNCTION stnlp_guard_report_final_category()
-    RETURNS trigger AS $
+    RETURNS trigger AS $$
     DECLARE
         matching_review_id uuid;
     BEGIN
@@ -70,7 +70,7 @@ def upgrade() -> None:
         END IF;
         RETURN NEW;
     END;
-    $ LANGUAGE plpgsql;
+    $$ LANGUAGE plpgsql;
     """)
     op.execute("""
     CREATE TRIGGER trg_reports_final_category_requires_review
