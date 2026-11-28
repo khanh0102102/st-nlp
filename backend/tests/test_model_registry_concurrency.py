@@ -143,3 +143,113 @@ def test_concurrent_model_activation_keeps_exactly_one_active(
                 )
             )
             cleanup.execute(delete(User).where(User.id == admin_id))
+
+
+
+def test_rollback_reactivates_approved_model_and_records_lifecycle_audit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    active_artifact = tmp_path / "current-active.bin"
+    rollback_artifact = tmp_path / "previous-approved.bin"
+    active_artifact.write_bytes(b"current-active-artifact")
+    rollback_artifact.write_bytes(b"previous-approved-artifact")
+    active_checksum = hashlib.sha256(active_artifact.read_bytes()).hexdigest()
+    rollback_checksum = hashlib.sha256(rollback_artifact.read_bytes()).hexdigest()
+
+    admin_id = uuid4()
+    active_id = uuid4()
+    rollback_id = uuid4()
+    now = datetime.now(UTC)
+
+    with SessionLocal.begin() as seed:
+        admin = User(
+            id=admin_id,
+            email=f"registry-rollback-{uuid4().hex}@example.test",
+            display_name="Registry rollback test",
+            role_codes=["ADMIN"],
+        )
+        seed.add(admin)
+        seed.flush()
+
+        active_model = _model(
+            "SVM",
+            "current-active",
+            "current-active.bin",
+            active_checksum,
+            status="ACTIVE",
+            admin_id=admin_id,
+        )
+        active_model.id = active_id
+        active_model.activated_at = now
+
+        rollback_model = _model(
+            "NB",
+            "previous-approved",
+            "previous-approved.bin",
+            rollback_checksum,
+            status="RETIRED",
+            admin_id=admin_id,
+        )
+        rollback_model.id = rollback_id
+        rollback_model.approved_by = admin_id
+        rollback_model.approved_at = now
+        rollback_model.activated_at = now
+        rollback_model.retired_at = now
+
+        seed.add_all([active_model, rollback_model])
+
+    monkeypatch.setattr(
+        model_api,
+        "get_settings",
+        lambda: SimpleNamespace(model_artifacts_dir=tmp_path),
+    )
+    audited_actions: list[str] = []
+
+    def record_audit(*args, **kwargs) -> bool:
+        audited_actions.append(args[2])
+        return True
+
+    monkeypatch.setattr(model_api, "_audit", record_audit)
+
+    request = SimpleNamespace(
+        state=SimpleNamespace(request_id="registry-rollback-test")
+    )
+    staff = SimpleNamespace(id=admin_id)
+
+    try:
+        with SessionLocal() as session:
+            response = model_api.rollback_model(
+                rollback_id,
+                request,
+                session,
+                staff,
+            )
+
+        assert response["data"]["status"] == "ACTIVE"
+        assert response["meta"]["audit_event_recorded"] is True
+        assert audited_actions == ["model.rolled_back"]
+
+        with SessionLocal() as check:
+            current = check.get(ModelVersion, active_id)
+            restored = check.get(ModelVersion, rollback_id)
+            assert current is not None
+            assert restored is not None
+            assert current.model_status == "RETIRED"
+            assert current.retired_at is not None
+            assert restored.model_status == "ACTIVE"
+            assert restored.activated_at is not None
+            assert restored.retired_at is None
+            assert restored.approved_at == now
+            assert restored.approved_by == admin_id
+            assert check.scalar(
+                select(ModelVersion.id).where(ModelVersion.model_status == "ACTIVE")
+            ) == rollback_id
+    finally:
+        with SessionLocal.begin() as cleanup:
+            cleanup.execute(
+                delete(ModelVersion).where(
+                    ModelVersion.id.in_([active_id, rollback_id])
+                )
+            )
+            cleanup.execute(delete(User).where(User.id == admin_id))
