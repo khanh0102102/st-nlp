@@ -78,11 +78,6 @@
 | TC-MAP-001 | Report có tọa độ hợp lệ | Marker xuất hiện đúng vị trí |
 | TC-MAP-002 | Report không có tọa độ | Không tạo marker giả |
 | TC-MAP-003 | Người không có quyền xem chi tiết marker | Không lộ PII |
-| TC-MODEL-004 | Tạo hai model ACTIVE trực tiếp PostgreSQL | Partial unique index từ chối |
-| TC-MODEL-005 | Hai request activate đồng thời | Advisory lock + unique index giữ đúng một ACTIVE; model còn lại RETIRED |
-| TC-MODEL-006 | Rollback model đã approved | Model trước ACTIVE, model hiện tại RETIRED; approval metadata và audit action giữ nguyên |
-| TC-DB-014 | Đếm business tables PostgreSQL | Chính xác 12 bảng; loại alembic_version kỹ thuật |
-| TC-DB-015 | Seed category catalog | Chính xác 11 category active theo sort_order 1..11 |
 
 ## 6. Dataset và Training
 
@@ -101,6 +96,9 @@
 | TC-MODEL-001 | Đăng ký model version | Liên kết training run/artifact |
 | TC-MODEL-002 | Kích hoạt model chưa được duyệt | Bị từ chối |
 | TC-MODEL-003 | Rollback về version trước | Active model đổi và audit được ghi |
+| TC-MODEL-004 | Tạo hai model ACTIVE trực tiếp PostgreSQL | Partial unique index từ chối |
+| TC-MODEL-005 | Hai request activate đồng thời | Advisory lock + unique index giữ đúng một ACTIVE; model còn lại RETIRED |
+| TC-MODEL-006 | Rollback model đã approved | Model trước ACTIVE, model hiện tại RETIRED; approval metadata và audit action giữ nguyên |
 
 ## 7. Non-functional và Security
 
@@ -151,6 +149,8 @@ Khi thực thi, bổ sung: Actual Result, Pass/Fail/Blocked, Build/Commit, Teste
 | TC-DB-011 | Training metrics per-class | Có category_id, split, averaging và support đúng |
 | TC-DB-012 | Schema migration | Có đúng 12 bảng baseline; không tự thêm bảng thứ 13 |
 | TC-DB-013 | Review/audit sink tạm thời lỗi | Không làm mất dữ liệu review đã commit; audit event retry/được cảnh báo theo policy |
+| TC-DB-014 | Đếm business tables PostgreSQL | Chính xác 12 bảng; loại alembic_version kỹ thuật |
+| TC-DB-015 | Seed category catalog | Chính xác 11 category active theo sort_order 1..11 |
 
 
 ## 11. Citizen Profile
