@@ -8,7 +8,7 @@ Ngày cập nhật: 2026-11-28
 - Base branch: main — chưa được thay đổi trong đợt triển khai này.
 - Working branch: feature/project-foundation.
 - Code snapshot đã được Docker CI xác minh: `e89f9287ac07e83094eda0aa3f7cc65b9ec15963`.
-- Branch compare snapshot trước commit tài liệu: feature/project-foundation ahead 28, behind 0 so với main.
+- Branch compare sau đồng bộ tài liệu: feature/project-foundation ahead 31, behind 0 so với main.
 - Không tự tạo/merge PR; việc đưa feature vào main cần được chủ dự án duyệt.
 
 ### CI evidence
@@ -54,6 +54,8 @@ Test bị skip trong backend image là module phụ thuộc PyTorch; neural test
 | Full integration / E2E | NOT_STARTED | Chưa chứng minh trọn luồng citizen report → review → frozen dataset → training → active inference |
 | Production readiness | NOT_READY | OAuth, secrets, persistent storage, monitoring, backups, security review, NFR và deployment còn mở |
 
+**Documentation snapshot:** `c703c4b55a37dbbefd67770ca713b60d20360888`, verified by [GitHub Actions run #28](https://github.com/khanh0102102/st-nlp/actions/runs/46147112115), SUCCESS. Run #28 on the final RTM/test-inventory correction reports 61 backend passed, 1 skipped, 8 neural passed; migration/seed, trainer CLI, stack startup and health checks PASS.
+
 ## Milestone 1 — acceptance evidence
 
 Bằng chứng: GitHub Actions [run #26](https://github.com/khanh0102102/st-nlp/actions/runs/46146303002), code commit `e89f9287ac07e83094eda0aa3f7cc65b9ec15963`.
@@ -73,9 +75,9 @@ Bằng chứng: GitHub Actions [run #26](https://github.com/khanh0102102/st-nlp/
 | M1-11 | Migration + seed 11 categories | DONE | PostgreSQL fresh/upgrade/downgrade/re-upgrade và seed PASS |
 | M1-12 | Giữ đúng 12 business tables | DONE | Schema test xác minh 12; alembic_version là bảng kỹ thuật |
 | M1-13 | Docker suite + health | DONE | 61 passed, 1 skipped; neural 8 passed; build, CLI, startup và health PASS |
-| M1-14 | Tài liệu theo bằng chứng | PARTIAL | Tài liệu được đồng bộ trong commit tiếp theo; CI trên snapshot tài liệu đang chờ |
+| M1-14 | Tài liệu theo bằng chứng | DONE | README, RTM, status, plan, decision log, DB/API/test/deployment docs được đồng bộ; Docker CI run #28 trên commit docs c703c4b SUCCESS |
 
-Milestone 1 tổng thể: **PARTIAL trong snapshot tài liệu này** cho đến khi CI chạy trên commit tài liệu hoàn tất. Không suy rộng sang Citizen/Admin Portal, OAuth thật, inference service hoặc chất lượng mô hình.
+Milestone 1: **DONE trong phạm vi 14 tiêu chí của milestone**, với bằng chứng Docker CI run #26 (code/regression) và run #28 (documentation snapshot). Kết luận này không đồng nghĩa toàn bộ sản phẩm đã hoàn thành: Citizen/Admin Portal, OAuth thật, authenticated inference service và đánh giá chất lượng trên dataset thật tiếp tục thuộc các milestone sau.
 ## ML implementation detail
 
 - Preprocessing version hiện tại: vi-nfc-lower-underthesea-v1.
@@ -122,6 +124,8 @@ Milestone 1 tổng thể: **PARTIAL trong snapshot tài liệu này** cho đến
 | a5922470d497ca12958af397533d59810ac4674e | Bind final_category update với review row bằng transaction-local marker |
 | 917c887745a7f02a49d7b403c1959b30d8c79a12 | Sửa PL/pgSQL delimiter; CI #25: 60 backend pass, 1 skip; 8 neural pass |
 | e89f9287ac07e83094eda0aa3f7cc65b9ec15963 | Model rollback lifecycle test; CI #26: 61 backend pass, 1 skip; 8 neural pass |
+| 0bf7849e3960f915bb63549ea28aaab75d8bb93a | Đồng bộ Implementation Status, RTM, kế hoạch, quyết định, DB/API/test/deployment docs và README |
+| c703c4b55a37dbbefd67770ca713b60d20360888 | Sửa vị trí/cột mapping RTM và test inventory; CI #28 SUCCESS: 61 backend pass, 1 skip; 8 neural pass |
 
 Một số commit trung gian có CI fail do cấu hình dependency; lỗi đã được sửa ở các commit sau. Không dùng các commit trung gian đó làm release baseline.
 
