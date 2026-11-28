@@ -116,3 +116,27 @@ def test_create_report_rejects_whitespace_only_content_without_persisting(
     assert error.value.status_code == 422
     assert session.records == []
     assert session.committed is False
+
+
+
+def test_database_rejects_mutation_of_original_report_content(
+    db_session: Session,
+) -> None:
+    user = _citizen(db_session)
+    report = Report(
+        user_id=user.id,
+        raw_content="  Nội dung gốc có dấu tiếng Việt.\\n",
+    )
+    db_session.add(report)
+    db_session.flush()
+
+    with pytest.raises(DBAPIError):
+        with db_session.begin_nested():
+            db_session.execute(
+                update(Report)
+                .where(Report.id == report.id)
+                .values(raw_content="Nội dung đã bị thay đổi.")
+            )
+
+    db_session.refresh(report)
+    assert report.raw_content == "  Nội dung gốc có dấu tiếng Việt.\\n"

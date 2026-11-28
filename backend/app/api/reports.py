@@ -276,16 +276,41 @@ def create_report(
                     json={"report_id": str(report.id)},
                 )
             if response.status_code == 200:
-                prediction_payload = response.json()["data"]
+                body = response.json()
+                candidate = body.get("data") if isinstance(body, dict) else None
+                allowed_statuses = {
+                    "PENDING", "SUCCEEDED", "INSUFFICIENT_INFORMATION",
+                    "INVALID_INPUT", "INFERENCE_FAILED",
+                }
+                if (
+                    not isinstance(candidate, dict)
+                    or candidate.get("inference_status") not in allowed_statuses
+                    or (
+                        candidate.get("inference_status") == "SUCCEEDED"
+                        and candidate.get("predicted_category") is None
+                    )
+                    or (
+                        candidate.get("inference_status") != "SUCCEEDED"
+                        and candidate.get("predicted_category") is not None
+                    )
+                    or (
+                        candidate.get("confidence_value") is not None
+                        and candidate.get("confidence_type") is None
+                    )
+                ):
+                    raise ValueError("ML service response does not match the prediction contract.")
+                prediction_payload = candidate
             elif response.status_code != 409:
                 logging.getLogger(__name__).warning(
                     "ML service returned HTTP %s for report %s",
                     response.status_code,
                     report.id,
                 )
-        except httpx.HTTPError:
+        except (httpx.HTTPError, ValueError, TypeError, KeyError) as exc:
             logging.getLogger(__name__).info(
-                "ML service is not reachable; report was saved with an explicit INFERENCE_FAILED record."
+                "ML service unavailable or returned an invalid response (%s); report %s remains saved without a successful inference.",
+                type(exc).__name__,
+                report.id,
             )
 
     # Audit every accepted report, including the normal no-ML-service path.
@@ -729,9 +754,16 @@ def create_review(
         selected_category_id=category.id, action_code=action_code,
         note=payload.note.strip() if payload.note else None,
     )
-    session.add(review)
-    report.final_category_id = category.id
-    session.commit()
+    try:
+        # Flush the append-only history row first. PostgreSQL verifies that the
+        # final-category change is paired with this reviewer in the same xact.
+        session.add(review)
+        session.flush()
+        report.final_category_id = category.id
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
     session.refresh(review)
 
     recorded = _audit(

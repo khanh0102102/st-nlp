@@ -9,7 +9,8 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field
-from sqlalchemy import desc, select
+from sqlalchemy import desc, select, text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_db, require_roles
@@ -20,6 +21,15 @@ from app.infrastructure.audit import append_audit_event
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/admin/models", tags=["model registry"])
 MODEL_FAMILIES = {"NB", "SVM", "CNN_1D", "LSTM"}
+_MODEL_ACTIVATION_LOCK_NAMESPACE = 1937006963
+
+
+def _lock_model_activation(session: Session) -> None:
+    """Serialize every registry activation/rollback, including the empty-active-set case."""
+    session.execute(
+        text("SELECT pg_advisory_xact_lock(:namespace, :lock_key)"),
+        {"namespace": _MODEL_ACTIVATION_LOCK_NAMESPACE, "lock_key": 1},
+    )
 
 
 class ModelRegister(BaseModel):
@@ -226,6 +236,7 @@ def activate_model(
     session: Session = Depends(get_db),
     staff: User = Depends(require_roles("ADMIN")),
 ):
+    _lock_model_activation(session)
     model = session.scalar(
         select(ModelVersion).where(ModelVersion.id == model_id).with_for_update()
     )
@@ -249,7 +260,14 @@ def activate_model(
     model.model_status = "ACTIVE"
     model.activated_at = now
     model.retired_at = None
-    session.commit()
+    try:
+        session.commit()
+    except IntegrityError as exc:
+        session.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="Another model activation won the registry concurrency race.",
+        ) from exc
     session.refresh(model)
     recorded = _audit(
         request,
@@ -268,6 +286,7 @@ def rollback_model(
     session: Session = Depends(get_db),
     staff: User = Depends(require_roles("ADMIN")),
 ):
+    _lock_model_activation(session)
     target = session.scalar(
         select(ModelVersion).where(ModelVersion.id == model_id).with_for_update()
     )
@@ -290,7 +309,14 @@ def rollback_model(
     target.model_status = "ACTIVE"
     target.activated_at = now
     target.retired_at = None
-    session.commit()
+    try:
+        session.commit()
+    except IntegrityError as exc:
+        session.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="Another model activation won the registry concurrency race.",
+        ) from exc
     session.refresh(target)
     recorded = _audit(
         request,
