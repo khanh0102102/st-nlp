@@ -13,7 +13,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile, status
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
-from sqlalchemy import desc, func, select
+from sqlalchemy import desc, func, select, text
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_user, get_db, require_roles
@@ -759,6 +759,12 @@ def create_review(
         # final-category change is paired with this reviewer in the same xact.
         session.add(review)
         session.flush()
+        # Transaction-local marker identifies the exact appended review row.
+        # The PostgreSQL trigger requires this row to match report/category.
+        session.execute(
+            text("SELECT set_config('stnlp.current_review_id', :review_id, true)"),
+            {"review_id": str(review.id)},
+        )
         report.final_category_id = category.id
         session.commit()
     except Exception:

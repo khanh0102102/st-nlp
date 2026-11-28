@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import select, text, update
+from sqlalchemy import delete, select, text, update
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session
 
@@ -214,3 +214,89 @@ def test_database_requires_review_and_final_category_to_commit_together(
                     "trg_prediction_review_requires_final_category IMMEDIATE"
                 )
             )
+
+
+
+def _insert_review_with_transaction_marker(
+    session: Session,
+    receiver: User,
+    report: Report,
+    prediction: Prediction,
+    category: IncidentCategory,
+) -> PredictionReview:
+    review = PredictionReview(
+        report_id=report.id,
+        prediction_id=prediction.id,
+        reviewer_id=receiver.id,
+        selected_category_id=category.id,
+        action_code="CORRECTED",
+        note="Approved review row",
+    )
+    session.add(review)
+    session.flush()
+    session.execute(
+        text("SELECT set_config('stnlp.current_review_id', :review_id, true)"),
+        {"review_id": str(review.id)},
+    )
+    report.final_category_id = category.id
+    session.flush()
+    return review
+
+
+def test_database_requires_matching_transaction_marker_even_with_review_row(
+    db_session: Session,
+) -> None:
+    _, receiver, report, prediction, categories = _scenario(db_session)
+    review = PredictionReview(
+        report_id=report.id,
+        prediction_id=prediction.id,
+        reviewer_id=receiver.id,
+        selected_category_id=categories[0].id,
+        action_code="CORRECTED",
+    )
+
+    with pytest.raises(DBAPIError):
+        with db_session.begin_nested():
+            db_session.add(review)
+            db_session.flush()
+            db_session.execute(
+                update(Report)
+                .where(Report.id == report.id)
+                .values(final_category_id=categories[0].id)
+            )
+
+
+def test_database_rejects_update_of_review_history(
+    db_session: Session,
+) -> None:
+    _, receiver, report, prediction, categories = _scenario(db_session)
+    review = _insert_review_with_transaction_marker(
+        db_session, receiver, report, prediction, categories[0]
+    )
+
+    with pytest.raises(DBAPIError):
+        with db_session.begin_nested():
+            db_session.execute(
+                update(PredictionReview)
+                .where(PredictionReview.id == review.id)
+                .values(note="attempted mutation")
+            )
+
+
+def test_database_rejects_delete_of_review_history(
+    db_session: Session,
+) -> None:
+    _, receiver, report, prediction, categories = _scenario(db_session)
+    review = _insert_review_with_transaction_marker(
+        db_session, receiver, report, prediction, categories[0]
+    )
+
+    with pytest.raises(DBAPIError):
+        with db_session.begin_nested():
+            db_session.execute(
+                delete(PredictionReview).where(PredictionReview.id == review.id)
+            )
+
+    assert db_session.scalar(
+        select(PredictionReview.id).where(PredictionReview.id == review.id)
+    ) == review.id

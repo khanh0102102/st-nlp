@@ -42,27 +42,35 @@ def upgrade() -> None:
     FOR EACH ROW EXECUTE FUNCTION stnlp_guard_prediction_review_actor();
     """)
 
-    # The report update must be backed by a review inserted by this transaction.
-    # xmin identifies rows created by the current PostgreSQL transaction.
+    # The report update must be backed by the exact review row inserted in this
+    # transaction; a transaction-local setting survives nested SQLAlchemy savepoints.
     op.execute("""
     CREATE FUNCTION stnlp_guard_report_final_category()
-    RETURNS trigger AS $$
+    RETURNS trigger AS $
+    DECLARE
+        matching_review_id uuid;
     BEGIN
         IF NEW.final_category_id IS DISTINCT FROM OLD.final_category_id THEN
-            IF NEW.final_category_id IS NULL OR NOT EXISTS (
-                SELECT 1
-                FROM prediction_reviews AS review_row
-                WHERE review_row.report_id = NEW.id
-                  AND review_row.selected_category_id = NEW.final_category_id
-                  AND review_row.xmin::text = ((pg_current_xact_id()::text::numeric % 4294967296)::bigint)::text
-            ) THEN
-                RAISE EXCEPTION 'reports.final_category_id may only change with a matching review in the same transaction'
+            matching_review_id := NULLIF(
+                current_setting('stnlp.current_review_id', true),
+                ''
+            )::uuid;
+            IF NEW.final_category_id IS NULL
+               OR matching_review_id IS NULL
+               OR NOT EXISTS (
+                    SELECT 1
+                    FROM prediction_reviews AS review_row
+                    WHERE review_row.id = matching_review_id
+                      AND review_row.report_id = NEW.id
+                      AND review_row.selected_category_id = NEW.final_category_id
+               ) THEN
+                RAISE EXCEPTION 'reports.final_category_id may only change with the matching transaction-local review'
                     USING ERRCODE = '23514';
             END IF;
         END IF;
         RETURN NEW;
     END;
-    $$ LANGUAGE plpgsql;
+    $ LANGUAGE plpgsql;
     """)
     op.execute("""
     CREATE TRIGGER trg_reports_final_category_requires_review
