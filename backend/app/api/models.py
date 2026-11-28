@@ -257,6 +257,10 @@ def activate_model(
     for active in active_models:
         active.model_status = "RETIRED"
         active.retired_at = now
+    # Flush retirements before setting the new ACTIVE row; the partial
+    # unique index is immediate and must not see two ACTIVE rows mid-flush.
+    if active_models:
+        session.flush()
     model.model_status = "ACTIVE"
     model.activated_at = now
     model.retired_at = None
@@ -306,6 +310,9 @@ def rollback_model(
     for active in active_models:
         active.model_status = "RETIRED"
         active.retired_at = now
+    # Preserve one-ACTIVE invariant with an immediate partial unique index.
+    if active_models:
+        session.flush()
     target.model_status = "ACTIVE"
     target.activated_at = now
     target.retired_at = None

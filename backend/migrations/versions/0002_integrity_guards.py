@@ -54,7 +54,7 @@ def upgrade() -> None:
                 FROM prediction_reviews AS review_row
                 WHERE review_row.report_id = NEW.id
                   AND review_row.selected_category_id = NEW.final_category_id
-                  AND review_row.xmin::text = pg_current_xact_id()::text
+                  AND review_row.xmin::text = ((pg_current_xact_id()::text::numeric % 4294967296)::bigint)::text
             ) THEN
                 RAISE EXCEPTION 'reports.final_category_id may only change with a matching review in the same transaction'
                     USING ERRCODE = '23514';
